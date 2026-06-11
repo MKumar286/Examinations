@@ -2,10 +2,11 @@
 <html>
 <head>
 <meta charset="UTF-8">
-<title>MGIT - Live Examination Board</title>
+<title>MGIT - Examination Board</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <style>
 * { margin: 0; padding: 0; box-sizing: border-box; }
+
 body {
     font-family: 'Segoe UI', Arial, sans-serif;
     padding: 20px;
@@ -15,12 +16,35 @@ body {
     color: #fff;
     min-height: 100vh;
 }
+
 @keyframes bgMove {
     0% { background-position: 0% 50%; }
     50% { background-position: 100% 50%; }
     100% { background-position: 0% 50%; }
 }
-.container { max-width: 900px; margin: 0 auto; padding-bottom: 60px; }
+
+.container { max-width: 900px; margin: 0 auto; padding-bottom: 60px; position: relative; }
+
+/* ⏱️ Pinned Top-Right Corner Countdown Timer */
+.timer-box {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    background: linear-gradient(135deg, #000814, #001d3d);
+    border: 2px solid #ff9f1c;
+    padding: 10px 18px;
+    border-radius: 30px;
+    box-shadow: 0 6px 25px rgba(0,0,0,0.5);
+    font-size: 16px;
+    font-weight: bold;
+    color: #ff9f1c;
+    z-index: 2000;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    letter-spacing: 1px;
+}
+
 .header-box {
     background: linear-gradient(135deg, #000814, #001d3d, #003566);
     padding: 25px;
@@ -30,6 +54,7 @@ body {
     border: 1px solid rgba(255,255,255,0.15);
     margin-bottom: 25px;
 }
+
 h1 {
     font-size: 32px;
     background: linear-gradient(90deg, #ffffff, #ffe082, #ffffff);
@@ -37,6 +62,7 @@ h1 {
     -webkit-text-fill-color: transparent;
     margin-bottom: 6px;
 }
+
 .section-title {
     font-size: 22px;
     margin: 35px 0 15px 0;
@@ -45,36 +71,56 @@ h1 {
     color: #00f5d4;
     text-shadow: 0 0 8px rgba(0,245,212,0.2);
 }
+
+/* ⚪ White Background & Bold Black Text Update */
 .question-card {
-    background: rgba(255, 255, 255, 0.06);
-    backdrop-filter: blur(10px);
-    border: 1px solid rgba(255, 255, 255, 0.15);
+    background: #ffffff;
     border-radius: 12px;
     padding: 22px;
     margin-bottom: 20px;
-    box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+    box-shadow: 0 6px 20px rgba(0,0,0,0.3);
+    border: 1px solid rgba(0,0,0,0.1);
 }
-.question-text { font-size: 16px; font-weight: 600; margin-bottom: 15px; line-height: 1.4; }
+
+.question-text { 
+    font-size: 16px; 
+    font-weight: bold; 
+    color: #000000; 
+    margin-bottom: 15px; 
+    line-height: 1.4; 
+}
+
 .option-item {
     display: flex;
     align-items: center;
-    background: rgba(255, 255, 255, 0.04);
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: #f8f9fa;
+    border: 1px solid #e9ecef;
     border-radius: 8px;
     padding: 12px 14px;
     margin-bottom: 10px;
     cursor: pointer;
     font-size: 14.5px;
-    transition: background 0.2s;
+    color: #212529;
+    font-weight: 500;
+    transition: all 0.2s;
 }
-.option-item:hover { background: rgba(255, 255, 255, 0.1); }
-.option-item input { margin-right: 12px; accent-color: #00bcff; width: 18px; height: 18px; cursor: pointer; }
-.correct-style { background: rgba(56, 176, 0, 0.18) !important; border-color: #38b000 !important; color: #00ff66 !important; font-weight: bold; }
-.incorrect-style { background: rgba(211, 47, 47, 0.18) !important; border-color: #d32f2f !important; color: #ff5252 !important; }
+
+.option-item:hover { 
+    background: #e9ecef; 
+    border-color: #ced4da;
+}
+
+.option-item input { margin-right: 12px; accent-color: #0072ff; width: 18px; height: 18px; cursor: pointer; }
+
+/* Feedback Status Overrides */
+.correct-style { background: #d4edda !important; border-color: #c3e6cb !important; color: #155724 !important; font-weight: bold; }
+.incorrect-style { background: #f8d7da !important; border-color: #f5c6cb !important; color: #721c24 !important; }
+
 .explanation-box {
-    margin-top: 15px; padding: 12px 15px; background: rgba(0, 0, 0, 0.35);
-    border-left: 4px solid #ffd166; border-radius: 4px; font-size: 13.5px; color: #ffe082; display: none;
+    margin-top: 15px; padding: 12px 15px; background: #fff3cd;
+    border-left: 4px solid #ffc107; border-radius: 4px; font-size: 13.5px; color: #856404; display: none;
 }
+
 .middle-action-bar {
     display: flex;
     justify-content: center;
@@ -82,23 +128,29 @@ h1 {
     width: 100%;
     margin: 30px 0;
 }
+
 .submit-btn {
     background: linear-gradient(135deg, #00bcff, #0072ff); color: #fff;
     padding: 14px 45px; font-size: 16px; font-weight: bold; border: none;
     border-radius: 25px; cursor: pointer; box-shadow: 0 5px 15px rgba(0, 188, 255, 0.4);
     transition: all 0.3s ease;
 }
+
 .submit-btn:hover { transform: scale(1.03); box-shadow: 0 7px 20px rgba(0, 188, 255, 0.6); }
+
 .result-banner {
     display: none; background: linear-gradient(135deg, #051329, #0a2246);
     border: 1px solid #ffd166; border-radius: 14px; padding: 25px; text-align: center; margin-top: 25px;
     box-shadow: 0 8px 25px rgba(0,0,0,0.4);
 }
+
 .result-banner h3 { font-size: 24px; color: #ffd166; margin-bottom: 10px; }
 .loading-box { text-align: center; padding: 40px; font-size: 18px; color: #ffe082; font-weight: bold; }
 </style>
 </head>
 <body>
+
+<div class="timer-box">⏳ Time Left: <span id="timeCounter">60:00</span></div>
 
 <div class="container">
     <div class="header-box">
@@ -125,14 +177,41 @@ h1 {
 <script src="https://cdn.jsdelivr.net/npm/papaparse@5.3.2/papaparse.min.js"></script>
 
 <script>
-// Your raw spreadsheet CSV export endpoint URL link string
 const csvURL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTaXaD9w24-H0UnC8xPkC2b6rvVD89sVFURXwoylUdWolFq89fUZLh6WYfGKr_YtA/pub?gid=1558583524&single=true&output=csv";
 
 let examQuestions = [];
+let totalSeconds = 60 * 60; // ⏱️ Default exam duration: 60 Minutes
+let timerInterval = null;
 
 window.addEventListener('DOMContentLoaded', () => {
     loadQuestionsFromSheet();
+    startTimer();
 });
+
+function startTimer() {
+    const display = document.getElementById("timeCounter");
+    timerInterval = setInterval(() => {
+        let minutes = Math.floor(totalSeconds / 60);
+        let seconds = totalSeconds % 60;
+
+        minutes = minutes < 10 ? "0" + minutes : minutes;
+        seconds = seconds < 10 ? "0" + seconds : seconds;
+
+        display.innerText = `${minutes}:${seconds}`;
+
+        if (totalSeconds <= 300) { // Highlight alert color when time left < 5 Mins
+            document.querySelector(".timer-box").style.color = "#ff5252";
+            document.querySelector(".timer-box").style.borderColor = "#ff5252";
+        }
+
+        if (totalSeconds <= 0) {
+            clearInterval(timerInterval);
+            alert("⏰ Time is up! Your answers are being compiled automatically.");
+            document.getElementById("quizForm").requestSubmit(); // Auto submit
+        }
+        totalSeconds--;
+    }, 1000);
+}
 
 function loadQuestionsFromSheet() {
     Papa.parse(csvURL, {
@@ -142,9 +221,7 @@ function loadQuestionsFromSheet() {
         complete: function(results) {
             let rawRows = results.data;
             
-            // Map incoming columns to standardized object keys safely
             examQuestions = rawRows.map(row => {
-                // Find column names dynamically to avoid case errors
                 let keys = Object.keys(row);
                 let findVal = (terms) => {
                     let foundKey = keys.find(k => terms.some(t => k.toLowerCase().trim().includes(t)));
@@ -161,7 +238,7 @@ function loadQuestionsFromSheet() {
                     correct: findVal(["correct", "ans", "answer"]).toUpperCase(),
                     explanation: findVal(["explanation", "solution", "solve"]) || "No explanation attached."
                 };
-            }).filter(q => q.question !== ""); // Drop broken placeholder rows
+            }).filter(q => q.question !== "");
 
             if(examQuestions.length === 0) {
                 document.getElementById("dynamicQuestionsContainer").innerHTML = "<div class='loading-box' style='color:#ff5252;'>❌ Empty Matrix: Check your column headers names!</div>";
@@ -173,7 +250,7 @@ function loadQuestionsFromSheet() {
         },
         error: function(err) {
             console.error(err);
-            document.getElementById("dynamicQuestionsContainer").innerHTML = "<div class='loading-box' style='color:#ff5252;'>❌ Network Connection Offline. Validate 'Publish to Web' parameters.</div>";
+            document.getElementById("dynamicQuestionsContainer").innerHTML = "<div class='loading-box' style='color:#ff5252;'>❌ Network Connection Offline.</div>";
         }
     });
 }
@@ -186,7 +263,6 @@ function renderQuestions() {
     examQuestions.forEach((q, index) => {
         const qNum = index + 1;
         
-        // Group questions under dynamic subject headers automatically
         if (q.section !== currentSection) {
             currentSection = q.section;
             htmlOutput += `<h2 class="section-title">${currentSection}</h2>`;
@@ -210,6 +286,8 @@ function renderQuestions() {
 
 function evaluateQuiz(event) {
     event.preventDefault();
+    clearInterval(timerInterval); // Halt countdown on evaluation trigger
+    
     let cards = document.querySelectorAll(".question-card");
     let score = 0;
 
@@ -221,7 +299,6 @@ function evaluateQuiz(event) {
 
         optionLabels.forEach(label => label.classList.remove("correct-style", "incorrect-style"));
 
-        // Highlight correct target green
         optionLabels.forEach(label => {
             if (label.querySelector('input').value === correctAnswer) {
                 label.classList.add("correct-style");
