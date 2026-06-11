@@ -27,7 +27,6 @@ body {
 
 .container { max-width: 900px; margin: 0 auto; padding-bottom: 60px; position: relative; }
 
-/* ⏱️ Pinned Top-Right Corner Countdown Timer */
 .timer-box {
     position: fixed;
     top: 20px;
@@ -44,16 +43,17 @@ body {
     display: flex;
     align-items: center;
     gap: 8px;
-    letter-spacing: 1px;
 }
 
 .header-box {
     background: linear-gradient(135deg, #000814, #001d3d, #003566);
-    padding: 15px 10px;
-    border-radius: 18px 18px 0 0;
+    padding: 20px 15px;
+    border-radius: 18px;
     text-align: center;
     box-shadow: 0 6px 20px rgba(0,0,0,0.35);
     border: 1px solid rgba(255,255,255,0.15);
+    margin-bottom: 20px;
+    cursor: pointer; /* Allows you to double-click here to login */
 }
 
 h1 {
@@ -62,21 +62,22 @@ h1 {
     background: linear-gradient(90deg, #ffffff, #ffe082, #ffffff);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
-    margin-bottom: 8px;
 }
 
-/* 📊 Stats Counter Dashboard Grid Panel */
+/* 🔒 HIDDEN BY DEFAULT: Admin Control Deck */
+#adminPanelDeck {
+    display: none; 
+}
+
 .stats-container {
     display: flex;
     flex-direction: column;
     background: linear-gradient(135deg, #051329, #0a2246);
     padding: 10px;
-    border-left: 1px solid rgba(255,255,255,0.15);
-    border-right: 1px solid rgba(255,255,255,0.15);
-    border-bottom: 1px solid rgba(255,255,255,0.15);
-    border-radius: 0 0 18px 18px;
+    border: 1px solid rgba(255,255,255,0.2);
+    border-radius: 14px;
     gap: 8px;
-    margin-bottom: 25px;
+    margin-bottom: 20px;
 }
 
 .stats-row {
@@ -89,7 +90,7 @@ h1 {
 .stats-card {
     background: rgba(255, 255, 255, 0.06);
     border-radius: 8px;
-    padding: 6px 8px;
+    padding: 8px;
     font-size: 11px;
     line-height: 1.2;
     color: #e0e6ed;
@@ -97,21 +98,22 @@ h1 {
     flex-direction: column;
     justify-content: center;
     box-shadow: 0 4px 15px rgba(0,0,0,0.2);
-    min-height: 52px;
 }
 
 .stats-card span {
     font-weight: bold;
-    font-size: 15px;
+    font-size: 16px;
     margin-top: 2px;
 }
 
 .border-blue { border: 1px solid #00bcff; }
 .border-blue span { color: #00bcff; }
-.border-cyan { border: 1px solid #00f5d4; }
-.border-cyan span { color: #00f5d4; }
-.border-green { border: 1px solid #38b000; background: rgba(56, 176, 0, 0.08); }
-.border-green span { color: #00ff66; text-shadow: 0 0 8px rgba(0,255,102,0.4); }
+.border-green { border: 1px solid #38b000; }
+.border-green span { color: #00ff66; }
+.border-red { border: 1px solid #ff5252; }
+.border-red span { color: #ff5252; }
+.border-amber { border: 1px solid #ffd166; }
+.border-amber span { color: #ffd166; }
 
 .section-title {
     font-size: 22px;
@@ -121,7 +123,6 @@ h1 {
     color: #00f5d4;
 }
 
-/* ⚪ Crisp Question Cards Design */
 .question-card {
     background: #ffffff;
     border-radius: 12px;
@@ -136,7 +137,6 @@ h1 {
     font-weight: bold; 
     color: #000000; 
     margin-bottom: 15px; 
-    line-height: 1.4; 
 }
 
 .option-item {
@@ -150,15 +150,11 @@ h1 {
     cursor: pointer;
     font-size: 14.5px;
     color: #212529;
-    font-weight: 500;
     transition: all 0.2s;
 }
 
-.option-item:hover { 
-    background: #e9ecef; 
-}
-
-.option-item input { margin-right: 12px; accent-color: #0072ff; width: 18px; height: 18px; cursor: pointer; }
+.option-item:hover { background: #e9ecef; }
+.option-item input { margin-right: 12px; accent-color: #0072ff; width: 18px; height: 18px; }
 
 .correct-style { background: #d4edda !important; border-color: #c3e6cb !important; color: #155724 !important; font-weight: bold; }
 .incorrect-style { background: #f8d7da !important; border-color: #f5c6cb !important; color: #721c24 !important; }
@@ -168,7 +164,6 @@ h1 {
     border-left: 4px solid #ffc107; border-radius: 4px; font-size: 13.5px; color: #856404; display: none;
 }
 
-/* 🟩 Floating Top Action Strip */
 .middle-action-bar {
     display: flex;
     justify-content: flex-end;
@@ -190,21 +185,9 @@ h1 {
     display: flex;
     align-items: center;
     gap: 6px;
-    transition: all 0.3s ease;
 }
 
-.excel-btn:hover {
-    background: linear-gradient(135deg, #248a52, #13633a);
-    border-color: #00f5d4;
-    transform: scale(1.02);
-}
-
-.submit-container {
-    display: flex;
-    justify-content: center;
-    margin: 30px 0;
-}
-
+.submit-container { display: flex; justify-content: center; margin: 30px 0; }
 .submit-btn {
     background: linear-gradient(135deg, #00bcff, #0072ff); color: #fff;
     padding: 14px 45px; font-size: 16px; font-weight: bold; border: none;
@@ -215,7 +198,6 @@ h1 {
     display: none; background: linear-gradient(135deg, #051329, #0a2246);
     border: 1px solid #ffd166; border-radius: 14px; padding: 25px; text-align: center; margin-top: 25px;
 }
-
 .loading-box { text-align: center; padding: 40px; font-size: 18px; color: #ffe082; font-weight: bold; }
 </style>
 </head>
@@ -224,22 +206,26 @@ h1 {
 <div class="timer-box">⏳ Time Left: <span id="timeCounter">60:00</span></div>
 
 <div class="container">
-    <div class="header-box">
+    <div class="header-box" ondblclick="triggerAdminLogin()">
         <h1>Practice Examination Portal</h1>
-        <p style="color: #b2ff59; font-size: 14px; font-weight: 500;">Live Google Sheets Secure Stream</p>
+        <p style="color: #b2ff59; font-size: 14px; font-weight: 500;">MGIT Secure Screening System</p>
     </div>
 
-    <div class="stats-container">
-        <div class="stats-row">
-            <div class="stats-card border-blue">Total Questions <span id="statQuestions">0</span></div>
-            <div class="stats-card border-cyan">Attempted Items <span id="statAttempted">0</span></div>
-            <div class="stats-card border-green">Correct Score <span id="statCorrect">0</span></div>
-            <div class="stats-card border-green">Passing Ratio <span id="statRatio">0%</span></div>
+    <div id="adminPanelDeck">
+        <div class="stats-container">
+            <div style="font-size: 13px; color: #ffd166; font-weight: bold; text-align: center; margin-bottom: 4px;">📊 ADMIN PERFORMANCE METRIC MATRIX</div>
+            <div class="stats-row">
+                <div class="stats-card border-blue">Total Questions <span id="statQuestions">0</span></div>
+                <div class="stats-card border-amber">Attempted <span id="statAttempted">0</span></div>
+                <div class="stats-card border-green">Correct Count <span id="statCorrect">0</span></div>
+                <div class="stats-card border-red">Wrong Count <span id="statWrong">0</span></div>
+                <div class="stats-card border-green">Passing % <span id="statRatio">0%</span></div>
+            </div>
         </div>
-    </div>
 
-    <div class="middle-action-bar">
-        <button class="excel-btn" onclick="downloadStatsExcel()">📊 Download Stats Array (Excel)</button>
+        <div class="middle-action-bar">
+            <button class="excel-btn" onclick="downloadStatsExcel()">📊 Download Stats Array (Excel)</button>
+        </div>
     </div>
 
     <form id="quizForm" onsubmit="evaluateQuiz(event)">
@@ -265,51 +251,48 @@ h1 {
 const csvURL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTaXaD9w24-H0UnC8xPkC2b6rvVD89sVFURXwoylUdWolFq89fUZLh6WYfGKr_YtA/pub?gid=1558583524&single=true&output=csv";
 
 let examQuestions = [];
-let totalSeconds = 60 * 60; // 60 minutes default
+let totalSeconds = 60 * 60; 
 let timerInterval = null;
 let examSubmitted = false;
 
 window.addEventListener('DOMContentLoaded', () => {
-    // 🔒 Security Check: Lock screen permanently if they already submitted before
     if (localStorage.getItem("exam_status_submitted") === "true") {
         examSubmitted = true;
         document.getElementById("timeCounter").innerText = "00:00";
-        document.querySelector(".timer-box").style.color = "#ff5252";
     }
     loadQuestionsFromSheet();
 });
 
+// 🔐 Admin Verification Trigger
+function triggerAdminLogin() {
+    let password = prompt("🔑 Enter Administrator Security Access Key:");
+    if (password === "1234") { // Change this string value to your custom passkey
+        document.getElementById("adminPanelDeck").style.display = "block";
+        alert("🔓 Access granted. Admin Metrics Board unlocked successfully.");
+    } else {
+        alert("❌ Unauthorized. Incorrect access code.");
+    }
+}
+
 function initTimerMechanics() {
     if (examSubmitted) return;
-
-    // Track time lapse through page refreshes using localStorage
     if (localStorage.getItem("exam_time_remaining")) {
         totalSeconds = parseInt(localStorage.getItem("exam_time_remaining"));
-    } else {
-        localStorage.setItem("exam_time_remaining", totalSeconds);
     }
 
     const display = document.getElementById("timeCounter");
     timerInterval = setInterval(() => {
         if (totalSeconds <= 0) {
             clearInterval(timerInterval);
-            localStorage.setItem("exam_time_remaining", 0);
             alert("⏰ Time is up! Your answers are being compiled automatically.");
-            autoForceSubmit();
+            evaluateQuiz(null);
             return;
         }
-
         totalSeconds--;
         localStorage.setItem("exam_time_remaining", totalSeconds);
-
-        let minutes = Math.floor(totalSeconds / 60);
-        let seconds = totalSeconds % 60;
-        display.innerText = `${minutes < 10 ? "0" + minutes : minutes}:${seconds < 10 ? "0" + seconds : seconds}`;
-
-        if (totalSeconds <= 300) {
-            document.querySelector(".timer-box").style.color = "#ff5252";
-            document.querySelector(".timer-box").style.borderColor = "#ff5252";
-        }
+        let m = Math.floor(totalSeconds / 60);
+        let s = totalSeconds % 60;
+        display.innerText = `${m < 10 ? "0" + m : m}:${s < 10 ? "0" + s : s}`;
     }, 1000);
 }
 
@@ -319,15 +302,12 @@ function loadQuestionsFromSheet() {
         header: true,
         skipEmptyLines: true,
         complete: function(results) {
-            let rawRows = results.data;
-            
-            examQuestions = rawRows.map(row => {
+            examQuestions = results.data.map(row => {
                 let keys = Object.keys(row);
                 let findVal = (terms) => {
                     let foundKey = keys.find(k => terms.some(t => k.toLowerCase().trim().includes(t)));
                     return foundKey ? row[foundKey].toString().trim() : "";
                 };
-
                 return {
                     section: findVal(["section", "subject", "category"]) || "General Studies",
                     question: findVal(["question", "text"]),
@@ -340,20 +320,12 @@ function loadQuestionsFromSheet() {
                 };
             }).filter(q => q.question !== "");
 
-            if(examQuestions.length === 0) {
-                document.getElementById("dynamicQuestionsContainer").innerHTML = "<div class='loading-box' style='color:#ff5252;'>❌ Empty Matrix: Check column headers names!</div>";
-                return;
-            }
-
             renderQuestions();
-            
             if (!examSubmitted) {
                 document.getElementById("submitButton").style.display = "block";
                 initTimerMechanics();
-                setupDashboardTrackers();
             } else {
-                // If locking activated, instantly show graded feedback sheet layout
-                autoForceSubmit();
+                evaluateQuiz(null);
             }
         }
     });
@@ -361,8 +333,7 @@ function loadQuestionsFromSheet() {
 
 function renderQuestions() {
     const container = document.getElementById("dynamicQuestionsContainer");
-    let currentSection = "";
-    let htmlOutput = "";
+    let currentSection = ""; let htmlOutput = "";
 
     examQuestions.forEach((q, index) => {
         const qNum = index + 1;
@@ -370,7 +341,6 @@ function renderQuestions() {
             currentSection = q.section;
             htmlOutput += `<h2 class="section-title">${currentSection}</h2>`;
         }
-
         htmlOutput += `
             <div class="question-card" data-correct="${q.correct}" data-index="${qNum}">
                 <p class="question-text">Q${qNum}. ${q.question}</p>
@@ -383,34 +353,8 @@ function renderQuestions() {
                 <div class="explanation-box">💡 <strong>Explanation:</strong> ${q.explanation}</div>
             </div>`;
     });
-
     container.innerHTML = htmlOutput;
     document.getElementById("statQuestions").innerText = examQuestions.length;
-}
-
-function setupDashboardTrackers() {
-    document.querySelectorAll(".option-item input").forEach(radio => {
-        radio.addEventListener("change", () => {
-            let checkedCount = document.querySelectorAll(`input[type="radio"]:checked`).length;
-            document.getElementById("statAttempted").innerText = checkedCount;
-            
-            // Auto-cache selections into localStorage to handle unexpected context reload drops safely
-            localStorage.setItem(radio.name, radio.value);
-        });
-    });
-
-    // Repopulate answers if user refreshed middle of test
-    examQuestions.forEach((_, i) => {
-        let qNum = i + 1;
-        let savedVal = localStorage.getItem(`q_${qNum}`);
-        if (savedVal) {
-            let targetRadio = document.querySelector(`input[name="q_${qNum}"][value="${savedVal}"]`);
-            if (targetRadio) {
-                targetRadio.checked = true;
-                document.getElementById("statAttempted").innerText = document.querySelectorAll(`input[type="radio"]:checked`).length;
-            }
-        }
-    });
 }
 
 function evaluateQuiz(event) {
@@ -422,95 +366,68 @@ function evaluateQuiz(event) {
     document.getElementById("submitButton").style.display = "none";
 
     let cards = document.querySelectorAll(".question-card");
-    let score = 0;
+    let correctCount = 0;
+    let wrongCount = 0;
+    let attemptedCount = 0;
 
     cards.forEach((card) => {
         let correctAnswer = card.getAttribute("data-correct").trim();
-        // Fallback context lookups check local cached responses if live object drops
-        let qNum = card.getAttribute("data-index");
-        let cachedSelection = localStorage.getItem(`q_${qNum}`);
-        
         let selectedInput = card.querySelector(`input[type="radio"]:checked`);
         let optionLabels = card.querySelectorAll(".option-item");
         let explanation = card.querySelector(".explanation-box");
 
         optionLabels.forEach(label => {
             let radio = label.querySelector('input');
-            radio.disabled = true; // Lock inputs completely
-            label.classList.remove("correct-style", "incorrect-style");
-            
-            if (radio.value === correctAnswer) {
-                label.classList.add("correct-style");
-            }
-            
-            // Repopulate tracking from cache if page was forced refreshed post submission
-            if (!selectedInput && cachedSelection && radio.value === cachedSelection) {
-                radio.checked = true;
-                selectedInput = radio;
-            }
+            radio.disabled = true;
+            if (radio.value === correctAnswer) label.classList.add("correct-style");
         });
 
         if (selectedInput) {
+            attemptedCount++;
             if (selectedInput.value === correctAnswer) {
-                score++;
+                correctCount++;
             } else {
+                wrongCount++;
                 selectedInput.parentElement.classList.add("incorrect-style");
             }
         }
         if (explanation) explanation.style.display = "block";
     });
 
-    // Update Dashboard Values Elements
-    let attemptCount = document.querySelectorAll(`input[type="radio"]:checked`).length;
-    document.getElementById("statAttempted").innerText = attemptCount;
-    document.getElementById("statCorrect").innerText = score;
-    let ratioPercentage = ((score / cards.length) * 100).toFixed(1);
+    // 📈 Compute Metrics Math
+    let totalQuestions = cards.length;
+    let ratioPercentage = ((correctCount / totalQuestions) * 100).toFixed(1);
+
+    // Update Hidden Stats Panel Elements
+    document.getElementById("statAttempted").innerText = attemptedCount;
+    document.getElementById("statCorrect").innerText = correctCount;
+    document.getElementById("statWrong").innerText = wrongCount;
     document.getElementById("statRatio").innerText = `${ratioPercentage}%`;
 
     let banner = document.getElementById("resultBanner");
     let display = document.getElementById("scoreDisplay");
-    display.innerHTML = `Submission Lock Activated.<br>Correct Answers Matrix: <strong>${score}</strong> / <strong>${cards.length}</strong>.<br>Passing Ratio Metric: <strong>${ratioPercentage}%</strong>`;
+    display.innerHTML = `Submission Received.<br>Correct Items: <strong>${correctCount}</strong> | Wrong Items: <strong>${wrongCount}</strong><br>Passing Accuracy: <strong>${ratioPercentage}%</strong>`;
     banner.style.display = "block";
-    
-    if (event) banner.scrollIntoView({ behavior: 'smooth' });
 }
 
-function autoForceSubmit() {
-    evaluateQuiz(null);
-}
-
-// 📊 SheetJS implementation for structured exam statistics compilation metrics
 function downloadStatsExcel() {
-    let quizCards = document.querySelectorAll(".question-card");
-    let diagnosticExportRows = [];
-
+    let quizCards = document.querySelectorAll(".question-card"); let diagnosticExportRows = [];
     quizCards.forEach((card) => {
         let qNum = card.getAttribute("data-index");
-        let qText = card.querySelector(".question-text").innerText;
         let rightAns = card.getAttribute("data-correct");
-        
         let checkedInput = card.querySelector(`input[type="radio"]:checked`);
         let studentAns = checkedInput ? checkedInput.value : "UNATTEMPTED";
-        let trackingStatus = (studentAns === rightAns) ? "CORRECT" : (studentAns === "UNATTEMPTED" ? "SKIPPED" : "WRONG");
-
         diagnosticExportRows.push({
-            "Question Number": `Q${qNum}`,
-            "Question Details": qText.replace(/^Q\d+\.\s*/, ""),
-            "Student Selected Option": studentAns,
-            "Correct Answer Key": rightAns,
-            "Evaluation Status Mapping": trackingStatus
+            "Question": `Q${qNum}`,
+            "Student Answer": studentAns,
+            "Correct Key": rightAns,
+            "Status": (studentAns === rightAns) ? "CORRECT" : (studentAns === "UNATTEMPTED" ? "SKIPPED" : "WRONG")
         });
     });
-
-    if (diagnosticExportRows.length === 0) {
-        alert("Evaluation matrix profiles are completely empty!");
-        return;
-    }
-
     let worksheet = XLSX.utils.json_to_sheet(diagnosticExportRows);
     let workbook = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(workbook, worksheet, "Student Performance");
-    XLSX.writeFile(workbook, "MGIT_Exam_Performance_Stats.xlsx");
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Performance Summary");
+    XLSX.writeFile(workbook, "Student_Exam_Result.xlsx");
 }
 </script>
 </body>
