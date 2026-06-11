@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>MGIT - Practice Examination Portal</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<style>
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Segoe UI', Arial, sans-serif;
+    padding: 20px;
+    background: linear-gradient(-45deg, #0f2027, #203a43, #2c5364);
+    color: #fff;
+    min-height: 100vh;
+}
+
+.container {
+    max-width: 850px;
+    margin: 0 auto;
+    padding-bottom: 60px;
+}
+
+.header {
+    background: linear-gradient(135deg, #000814, #001d3d, #003566);
+    padding: 25px;
+    border-radius: 14px;
+    text-align: center;
+    box-shadow: 0 6px 20px rgba(0,0,0,0.4);
+    border: 1px solid rgba(255,255,255,0.1);
+    margin-bottom: 25px;
+}
+
+h1 {
+    font-size: 28px;
+    background: linear-gradient(90deg, #ffffff, #ffe082, #ffffff);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    margin-bottom: 6px;
+}
+
+h2 {
+    font-size: 20px;
+    margin: 25px 0 15px 0;
+    padding-bottom: 5px;
+    border-bottom: 2px solid #00bcff;
+    color: #00f5d4;
+    text-shadow: 0 0 8px rgba(0, 245, 212, 0.2);
+}
+
+.question-card {
+    background: rgba(255, 255, 255, 0.06);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 10px;
+    padding: 20px;
+    margin-bottom: 18px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+    transition: transform 0.2s, border-color 0.2s;
+}
+
+.question-card:hover {
+    transform: translateY(-2px);
+    border-color: rgba(0, 188, 255, 0.4);
+}
+
+.question-text {
+    font-size: 15px;
+    font-weight: 600;
+    margin-bottom: 14px;
+    line-height: 1.4;
+}
+
+.options-list {
+    list-style: none;
+}
+
+.option-item {
+    display: flex;
+    align-items: center;
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 6px;
+    padding: 10px 12px;
+    margin-bottom: 8px;
+    cursor: pointer;
+    font-size: 14px;
+    transition: background 0.2s;
+}
+
+.option-item:hover {
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.option-item input {
+    margin-right: 12px;
+    accent-color: #00bcff;
+    cursor: pointer;
+    width: 16px;
+    height: 16px;
+}
+
+/* Feedback Styling for Verification States */
+.correct-style {
+    background: rgba(56, 176, 0, 0.15) !important;
+    border-color: #38b000 !important;
+    color: #00ff66 !important;
+    font-weight: bold;
+}
+
+.incorrect-style {
+    background: rgba(211, 47, 47, 0.15) !important;
+    border-color: #d32f2f !important;
+    color: #ff5252 !important;
+}
+
+.explanation-box {
+    margin-top: 12px;
+    padding: 10px 12px;
+    background: rgba(0, 0, 0, 0.3);
+    border-left: 3px solid #ffd166;
+    border-radius: 4px;
+    font-size: 13px;
+    color: #ffe082;
+    display: none;
+}
+
+.action-bar {
+    text-align: center;
+    margin-top: 30px;
+}
+
+.submit-btn {
+    background: linear-gradient(135deg, #00bcff, #0072ff);
+    color: #fff;
+    padding: 12px 35px;
+    font-size: 16px;
+    font-weight: bold;
+    border: none;
+    border-radius: 25px;
+    cursor: pointer;
+    box-shadow: 0 5px 15px rgba(0, 188, 255, 0.4);
+    transition: all 0.3s ease;
+}
+
+.submit-btn:hover {
+    transform: scale(1.04);
+    box-shadow: 0 7px 20px rgba(0, 188, 255, 0.6);
+}
+
+.result-banner {
+    display: none;
+    background: linear-gradient(135deg, #051329, #0a2246);
+    border: 1px solid #ffd166;
+    border-radius: 10px;
+    padding: 20px;
+    text-align: center;
+    margin-top: 25px;
+    box-shadow: 0 5px 20px rgba(0,0,0,0.5);
+}
+
+.result-banner h3 {
+    font-size: 22px;
+    color: #ffd166;
+    margin-bottom: 8px;
+}
+
+.result-banner p {
+    font-size: 16px;
+}
+</style>
+</head>
+<body>
+
+<div class="container">
+
+    <div class="header">
+        <h1>Practice Evaluation Board</h1>
+        <p style="color: #b2ff59; font-size: 14px; font-weight: 500;">Aptitude & Technical Screening</p>
+    </div>
+
+    <form id="quizForm" onsubmit="evaluateQuiz(event)">
+        
+        <h2>Section 1: Arithmetic Aptitude</h2>
+
+        <div class="question-card" data-correct="C">
+            <p class="question-text">Q1. A train running at the speed of 60 km/hr crosses a pole in 9 seconds. What is the length of the train?</p>
+            <div class="options-list">
+                <label class="option-item"><input type="radio" name="q1" value="A"> A) 120 meters</label>
+                <label class="option-item"><input type="radio" name="q1" value="B"> B) 180 meters</label>
+                <label class="option-item"><input type="radio" name="q1" value="C"> C) 150 meters</label>
+                <label class="option-item"><input type="radio" name="q1" value="D"> D) 324 meters</label>
+            </div>
+            <div class="explanation-box">
+                💡 <strong>Explanation:</strong> Speed = $60 \times \frac{5}{18} = \frac{50}{3}$ m/sec.<br>
+                Length of train = $\text{Speed} \times \text{Time} = \frac{50}{3} \times 9 = 150$ meters.
+            </div>
+        </div>
+
+        <div class="question-card" data-correct="B">
+            <p class="question-text">Q2. The average of 20 numbers is calculated as 35. It was discovered later that a number 85 was misread as 45. What is the correct average?</p>
+            <div class="options-list">
+                <label class="option-item"><input type="radio" name="q2" value="A"> A) 36.5</label>
+                <label class="option-item"><input type="radio" name="q2" value="B"> B) 37.0</label>
+                <label class="option-item"><input type="radio" name="q2" value="C"> C) 35.5</label>
+                <label class="option-item"><input type="radio" name="q2" value="D"> D) 38.0</label>
+            </div>
+            <div class="explanation-box">
+                💡 <strong>Explanation:</strong> Difference in value = $85 - 45 = 40$.<br>
+                Increase in average = $\frac{40}{20} = 2$.<br>
+                Correct Average = $35 + 2 = 37$.
+            </div>
+        </div>
+
+        <div class="question-card" data-correct="A">
+            <p class="question-text">Q3. A sum of money fetches a total simple interest of ₹1,200 at the rate of 8% per annum in 5 years. What is the principal sum?</p>
+            <div class="options-list">
+                <label class="option-item"><input type="radio" name="q3" value="A"> A) ₹3,000</label>
+                <label class="option-item"><input type="radio" name="q3" value="B"> B) ₹2,500</label>
+                <label class="option-item"><input type="radio" name="q3" value="C"> C) ₹4,000</label>
+                <label class="option-item"><input type="radio" name="q3" value="D"> D) ₹3,600</label>
+            </div>
+            <div class="explanation-box">
+                💡 <strong>Explanation:</strong> $\text{SI} = \frac{P \times R \times T}{100} \implies 1200 = \frac{P \times 8 \times 5}{100} \implies 1200 = \frac{40P}{100}$.<br>
+                Therefore, $P = \frac{1200 \times 100}{40} = \text{₹}3,000$.
+            </div>
+        </div>
+
+
+        <h2>Section 2: Technical & Core Computing</h2>
+
+        <div class="question-card" data-correct="B">
+            <p class="question-text">Q4. Which of the following execution contexts handles absolute layout positioning overlays dynamically within basic browser viewports?</p>
+            <div class="options-list">
+                <label class="option-item"><input type="radio" name="q4" value="A"> A) position: relative;</label>
+                <label class="option-item"><input type="radio" name="q4" value="B"> B) position: fixed;</label>
+                <label class="option-item"><input type="radio" name="q4" value="C"> C) position: static;</label>
+                <label class="option-item"><input type="radio" name="q4" value="D"> D) position: block;</label>
+            </div>
+            <div class="explanation-box">
+                💡 <strong>Explanation:</strong> `position: fixed;` removes an element from the normal document layout flow and positions it relative to the browser viewport boundary coordinates, keeping it static during page scrolling.
+            </div>
+        </div>
+
+        <div class="question-card" data-correct="C">
+            <p class="question-text">Q5. In JavaScript, which array method returns a brand new collection containing elements that pass a specific conditional criteria block?</p>
+            <div class="options-list">
+                <label class="option-item"><input type="radio" name="q5" value="A"> A) array.map()</label>
+                <label class="option-item"><input type="radio" name="q5" value="B"> B) array.forEach()</label>
+                <label class="option-item"><input type="radio" name="q5" value="C"> C) array.filter()</label>
+                <label class="option-item"><input type="radio" name="q5" value="D"> D) array.reduce()</label>
+            </div>
+            <div class="explanation-box">
+                💡 <strong>Explanation:</strong> `array.filter()` loops through an collection and evaluates a callback expression statement, constructing a shallow copy array populated only with matching values.
+            </div>
+        </div>
+
+        <div class="action-bar">
+            <button type="submit" class="submit-btn">💥 Submit Examination Paper</button>
+        </div>
+    </form>
+
+    <div id="resultBanner" class="result-banner">
+        <h3>Exam Summary Analysis</h3>
+        <p id="scoreDisplay"></p>
+    </div>
+
+</div>
+
+<script>
+function evaluateQuiz(event) {
+    event.preventDefault(); // Prevents page reload on form submit
+    
+    let cards = document.querySelectorAll(".question-card");
+    let score = 0;
+    let totalQuestions = cards.length;
+
+    cards.forEach((card) => {
+        let correctAnswer = card.getAttribute("data-correct");
+        let selectedInput = card.querySelector(`input[type="radio"]:checked`);
+        let optionLabels = card.querySelectorAll(".option-item");
+        let explanation = card.querySelector(".explanation-box");
+
+        // Clear previous grading styles
+        optionLabels.forEach(label => {
+            label.classList.remove("correct-style", "incorrect-style");
+        });
+
+        // Loop through inputs to color-code choices explicitly
+        optionLabels.forEach(label => {
+            let radio = label.querySelector('input');
+            if (radio && radio.value === correctAnswer) {
+                label.classList.add("correct-style"); // Always show right answer green
+            }
+        });
+
+        if (selectedInput) {
+            let userSelection = selectedInput.value;
+            if (userSelection === correctAnswer) {
+                score++;
+            } else {
+                // Highlight user's incorrect choice with red
+                let incorrectLabel = selectedInput.parentElement;
+                incorrectLabel.classList.add("incorrect-style");
+            }
+        }
+
+        // Unveil hidden resolution hints and breakdown guides
+        if (explanation) {
+            explanation.style.display = "block";
+        }
+    });
+
+    // Output statistical evaluation parameters to UI window banner
+    let banner = document.getElementById("resultBanner");
+    let display = document.getElementById("scoreDisplay");
+    
+    let percentage = ((score / totalQuestions) * 100).toFixed(1);
+    display.innerHTML = `You correctly answered <strong>${score}</strong> out of <strong>${totalQuestions}</strong> questions.<br>Final Score: <strong>${percentage}%</strong>`;
+    banner.style.display = "block";
+
+    // Smooth scroll straight down onto score report view window
+    banner.scrollIntoView({ behavior: 'smooth' });
+}
+</script>
+
+</body>
+</html>
