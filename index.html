@@ -53,7 +53,7 @@ body {
     box-shadow: 0 6px 20px rgba(0,0,0,0.35);
     border: 1px solid rgba(255,255,255,0.15);
     margin-bottom: 20px;
-    cursor: pointer; /* Allows you to double-click here to login */
+    cursor: pointer;
 }
 
 h1 {
@@ -64,7 +64,6 @@ h1 {
     -webkit-text-fill-color: transparent;
 }
 
-/* 🔒 HIDDEN BY DEFAULT: Admin Control Deck */
 #adminPanelDeck {
     display: none; 
 }
@@ -263,10 +262,9 @@ window.addEventListener('DOMContentLoaded', () => {
     loadQuestionsFromSheet();
 });
 
-// 🔐 Admin Verification Trigger
 function triggerAdminLogin() {
     let password = prompt("🔑 Enter Administrator Security Access Key:");
-    if (password === "1234") { // Change this string value to your custom passkey
+    if (password === "1234") { 
         document.getElementById("adminPanelDeck").style.display = "block";
         alert("🔓 Access granted. Admin Metrics Board unlocked successfully.");
     } else {
@@ -302,6 +300,10 @@ function loadQuestionsFromSheet() {
         header: true,
         skipEmptyLines: true,
         complete: function(results) {
+            if(!results.data || results.data.length === 0) {
+                document.getElementById("dynamicQuestionsContainer").innerHTML = "<div class='loading-box'>❌ Failed to read data rows from Google Sheet matrices.</div>";
+                return;
+            }
             examQuestions = results.data.map(row => {
                 let keys = Object.keys(row);
                 let findVal = (terms) => {
@@ -327,6 +329,9 @@ function loadQuestionsFromSheet() {
             } else {
                 evaluateQuiz(null);
             }
+        },
+        error: function() {
+            document.getElementById("dynamicQuestionsContainer").innerHTML = "<div class='loading-box'>❌ Network error establishing data link pipeline.</div>";
         }
     });
 }
@@ -335,26 +340,46 @@ function renderQuestions() {
     const container = document.getElementById("dynamicQuestionsContainer");
     let currentSection = ""; let htmlOutput = "";
 
+    // Load previously saved responses from storage array if present
+    let savedAnswers = {};
+    try {
+        savedAnswers = JSON.parse(localStorage.getItem("exam_saved_answers") || "{}");
+    } catch(e) { savedAnswers = {}; }
+
     examQuestions.forEach((q, index) => {
         const qNum = index + 1;
         if (q.section !== currentSection) {
             currentSection = q.section;
             htmlOutput += `<h2 class="section-title">${currentSection}</h2>`;
         }
+        
+        let previousSelected = savedAnswers[`q_${qNum}`] || "";
+
         htmlOutput += `
             <div class="question-card" data-correct="${q.correct}" data-index="${qNum}">
                 <p class="question-text">Q${qNum}. ${q.question}</p>
                 <div class="options-list">
-                    <label class="option-item"><input type="radio" name="q_${qNum}" value="A" ${examSubmitted ? 'disabled' : ''}> A) ${q.optionA}</label>
-                    <label class="option-item"><input type="radio" name="q_${qNum}" value="B" ${examSubmitted ? 'disabled' : ''}> B) ${q.optionB}</label>
-                    <label class="option-item"><input type="radio" name="q_${qNum}" value="C" ${examSubmitted ? 'disabled' : ''}> C) ${q.optionC}</label>
-                    <label class="option-item"><input type="radio" name="q_${qNum}" value="D" ${examSubmitted ? 'disabled' : ''}> D) ${q.optionD}</label>
+                    <label class="option-item"><input type="radio" name="q_${qNum}" value="A" ${previousSelected === 'A' ? 'checked' : ''} ${examSubmitted ? 'disabled' : ''} onchange="saveAnswerState('q_${qNum}', 'A')"> A) ${q.optionA}</label>
+                    <label class="option-item"><input type="radio" name="q_${qNum}" value="B" ${previousSelected === 'B' ? 'checked' : ''} ${examSubmitted ? 'disabled' : ''} onchange="saveAnswerState('q_${qNum}', 'B')"> B) ${q.optionB}</label>
+                    <label class="option-item"><input type="radio" name="q_${qNum}" value="C" ${previousSelected === 'C' ? 'checked' : ''} ${examSubmitted ? 'disabled' : ''} onchange="saveAnswerState('q_${qNum}', 'C')"> C) ${q.optionC}</label>
+                    <label class="option-item"><input type="radio" name="q_${qNum}" value="D" ${previousSelected === 'D' ? 'checked' : ''} ${examSubmitted ? 'disabled' : ''} onchange="saveAnswerState('q_${qNum}', 'D')"> D) ${q.optionD}</label>
                 </div>
                 <div class="explanation-box">💡 <strong>Explanation:</strong> ${q.explanation}</div>
             </div>`;
     });
     container.innerHTML = htmlOutput;
     document.getElementById("statQuestions").innerText = examQuestions.length;
+}
+
+// Automatically save options selected live to survive crashes/page refreshes
+function saveAnswerState(name, key) {
+    if (examSubmitted) return;
+    let savedAnswers = {};
+    try {
+        savedAnswers = JSON.parse(localStorage.getItem("exam_saved_answers") || "{}");
+    } catch(e) { savedAnswers = {}; }
+    savedAnswers[name] = key;
+    localStorage.setItem("exam_saved_answers", JSON.stringify(savedAnswers));
 }
 
 function evaluateQuiz(event) {
@@ -371,15 +396,17 @@ function evaluateQuiz(event) {
     let attemptedCount = 0;
 
     cards.forEach((card) => {
-        let correctAnswer = card.getAttribute("data-correct").trim();
+        let correctAnswer = (card.getAttribute("data-correct") || "").trim();
         let selectedInput = card.querySelector(`input[type="radio"]:checked`);
         let optionLabels = card.querySelectorAll(".option-item");
         let explanation = card.querySelector(".explanation-box");
 
         optionLabels.forEach(label => {
             let radio = label.querySelector('input');
-            radio.disabled = true;
-            if (radio.value === correctAnswer) label.classList.add("correct-style");
+            if (radio) {
+                radio.disabled = true;
+                if (radio.value === correctAnswer) label.classList.add("correct-style");
+            }
         });
 
         if (selectedInput) {
@@ -391,14 +418,11 @@ function evaluateQuiz(event) {
                 selectedInput.parentElement.classList.add("incorrect-style");
             }
         }
-        if (explanation) explanation.style.display = "block";
     });
 
-    // 📈 Compute Metrics Math
-    let totalQuestions = cards.length;
+    let totalQuestions = cards.length || 1;
     let ratioPercentage = ((correctCount / totalQuestions) * 100).toFixed(1);
 
-    // Update Hidden Stats Panel Elements
     document.getElementById("statAttempted").innerText = attemptedCount;
     document.getElementById("statCorrect").innerText = correctCount;
     document.getElementById("statWrong").innerText = wrongCount;
@@ -406,8 +430,10 @@ function evaluateQuiz(event) {
 
     let banner = document.getElementById("resultBanner");
     let display = document.getElementById("scoreDisplay");
-    display.innerHTML = `Submission Received.<br>Correct Items: <strong>${correctCount}</strong> | Wrong Items: <strong>${wrongCount}</strong><br>Passing Accuracy: <strong>${ratioPercentage}%</strong>`;
-    banner.style.display = "block";
+    if (display && banner) {
+        display.innerHTML = `Submission Received.<br>Correct Items: <strong>${correctCount}</strong> | Wrong Items: <strong>${wrongCount}</strong><br>Passing Accuracy: <strong>${ratioPercentage}%</strong>`;
+        banner.style.display = "block";
+    }
 }
 
 function downloadStatsExcel() {
