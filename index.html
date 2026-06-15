@@ -247,6 +247,7 @@ h1 {
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 
 <script>
+// IMPORTANT: Put your completely published Google Sheet CSV Link right below
 const csvURL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTaXaD9w24-H0UnC8xPkC2b6rvVD89sVFURXwoylUdWolFq89fUZLh6WYfGKr_YtA/pub?gid=1558583524&single=true&output=csv";
 
 let examQuestions = [];
@@ -255,13 +256,13 @@ let timerInterval = null;
 let examSubmitted = false;
 
 window.addEventListener('DOMContentLoaded', () => {
-    // Check if the exam was already completed in this browser session
+    // Session state safeguard check
     if (localStorage.getItem("exam_status_submitted") === "true") {
         examSubmitted = true;
         document.getElementById("timeCounter").innerText = "00:00";
     }
     loadQuestionsFromSheet();
-    addResetButtonToAdmin(); // Adds a manual reset tool for admins
+    injectAdminResetUtility();
 });
 
 function triggerAdminLogin() {
@@ -274,23 +275,23 @@ function triggerAdminLogin() {
     }
 }
 
-// Dynamically injects a hard-reset action button inside the admin control panel
-function addResetButtonToAdmin() {
+// Injects an administrative tool to force clear local memory and run tests from scratch
+function injectAdminResetUtility() {
     const actionBar = document.querySelector(".middle-action-bar");
-    if (actionBar && !document.getElementById("resetSessionBtn")) {
-        let resetBtn = document.createElement("button");
-        resetBtn.id = "resetSessionBtn";
-        resetBtn.className = "excel-btn";
-        resetBtn.style.background = "linear-gradient(135deg, #d90429, #ef233c)";
-        resetBtn.style.marginRight = "10px";
-        resetBtn.innerHTML = "🔄 Reset & Clear Exam Session";
-        resetBtn.onclick = function() {
-            if(confirm("Are you sure you want to completely clear the local exam session and restart the timer?")) {
+    if (actionBar && !document.getElementById("clearExamCacheBtn")) {
+        let clearBtn = document.createElement("button");
+        clearBtn.id = "clearExamCacheBtn";
+        clearBtn.className = "excel-btn";
+        clearBtn.style.background = "linear-gradient(135deg, #d90429, #ef233c)";
+        clearBtn.style.marginRight = "10px";
+        clearBtn.innerHTML = "🔄 Reset & Restart Timer Session";
+        clearBtn.onclick = function() {
+            if(confirm("Are you sure you want to completely reset this device session to test again?")) {
                 localStorage.clear();
                 window.location.reload();
             }
         };
-        actionBar.insertBefore(resetBtn, actionBar.firstChild);
+        actionBar.insertBefore(clearBtn, actionBar.firstChild);
     }
 }
 
@@ -320,29 +321,36 @@ function loadQuestionsFromSheet() {
     Papa.parse(csvURL, {
         download: true,
         header: true,
-        skipEmptyLines: true,
+        skipEmptyLines: 'greedy', // Aggressively strips out phantom trailing lines
         complete: function(results) {
             if(!results.data || results.data.length === 0) {
-                document.getElementById("dynamicQuestionsContainer").innerHTML = "<div class='loading-box'>❌ Failed to read data rows from Google Sheet matrices.</div>";
+                document.getElementById("dynamicQuestionsContainer").innerHTML = "<div class='loading-box'>❌ No clean data rows found inside your Google Sheet columns.</div>";
                 return;
             }
+            
+            // Smart column search pipeline maps data safely even with space variations
             examQuestions = results.data.map(row => {
                 let keys = Object.keys(row);
                 let findVal = (terms) => {
-                    let foundKey = keys.find(k => terms.some(t => k.toLowerCase().trim().includes(t)));
+                    let foundKey = keys.find(k => terms.some(t => k.toLowerCase().replace(/[^a-z0-9]/gi, '').includes(t)));
                     return foundKey ? row[foundKey].toString().trim() : "";
                 };
                 return {
                     section: findVal(["section", "subject", "category"]) || "General Studies",
                     question: findVal(["question", "text"]),
-                    optionA: findVal(["optiona", "option a", "a"]),
-                    optionB: findVal(["optionb", "option b", "b"]),
-                    optionC: findVal(["optionc", "option c", "c"]),
-                    optionD: findVal(["optiond", "option d", "d"]),
+                    optionA: findVal(["optiona", "a"]),
+                    optionB: findVal(["optionb", "b"]),
+                    optionC: findVal(["optionc", "c"]),
+                    optionD: findVal(["optiond", "d"]),
                     correct: findVal(["correct", "ans", "answer"]).toUpperCase(),
                     explanation: findVal(["explanation", "solution", "solve"]) || "No explanation attached."
                 };
             }).filter(q => q.question !== "");
+
+            if(examQuestions.length === 0) {
+                document.getElementById("dynamicQuestionsContainer").innerHTML = "<div class='loading-box'>❌ Header match mismatch. Ensure column row 1 uses: section, question, optionA, optionB, optionC, optionD, correct</div>";
+                return;
+            }
 
             renderQuestions();
             if (!examSubmitted) {
@@ -353,7 +361,7 @@ function loadQuestionsFromSheet() {
             }
         },
         error: function() {
-            document.getElementById("dynamicQuestionsContainer").innerHTML = "<div class='loading-box'>❌ Network error establishing data link pipeline.</div>";
+            document.getElementById("dynamicQuestionsContainer").innerHTML = "<div class='loading-box'>❌ Network link broken. Verify Sheet is set to Comma-Separated Values (.csv).</div>";
         }
     });
 }
@@ -362,10 +370,10 @@ function renderQuestions() {
     const container = document.getElementById("dynamicQuestionsContainer");
     let currentSection = ""; let htmlOutput = "";
 
-    let savedAnswers = {};
+    let trackingAnswers = {};
     try {
-        savedAnswers = JSON.parse(localStorage.getItem("exam_saved_answers") || "{}");
-    } catch(e) { savedAnswers = {}; }
+        trackingAnswers = JSON.parse(localStorage.getItem("exam_saved_answers") || "{}");
+    } catch(e) { trackingAnswers = {}; }
 
     examQuestions.forEach((q, index) => {
         const qNum = index + 1;
@@ -374,16 +382,17 @@ function renderQuestions() {
             htmlOutput += `<h2 class="section-title">${currentSection}</h2>`;
         }
         
-        let previousSelected = savedAnswers[`q_${qNum}`] || "";
+        let storedChoice = trackingAnswers[`q_${qNum}`] || "";
 
+        // Safe evaluation mode ensures no answers or explanation components show prematurely
         htmlOutput += `
             <div class="question-card" data-correct="${q.correct}" data-index="${qNum}">
                 <p class="question-text">Q${qNum}. ${q.question}</p>
                 <div class="options-list">
-                    <label class="option-item"><input type="radio" name="q_${qNum}" value="A" ${previousSelected === 'A' ? 'checked' : ''} ${examSubmitted ? 'disabled' : ''} onchange="saveAnswerState('q_${qNum}', 'A')"> A) ${q.optionA}</label>
-                    <label class="option-item"><input type="radio" name="q_${qNum}" value="B" ${previousSelected === 'B' ? 'checked' : ''} ${examSubmitted ? 'disabled' : ''} onchange="saveAnswerState('q_${qNum}', 'B')"> B) ${q.optionB}</label>
-                    <label class="option-item"><input type="radio" name="q_${qNum}" value="C" ${previousSelected === 'C' ? 'checked' : ''} ${examSubmitted ? 'disabled' : ''} onchange="saveAnswerState('q_${qNum}', 'C')"> C) ${q.optionC}</label>
-                    <label class="option-item"><input type="radio" name="q_${qNum}" value="D" ${previousSelected === 'D' ? 'checked' : ''} ${examSubmitted ? 'disabled' : ''} onchange="saveAnswerState('q_${qNum}', 'D')"> D) ${q.optionD}</label>
+                    <label class="option-item"><input type="radio" name="q_${qNum}" value="A" ${storedChoice === 'A' ? 'checked' : ''} ${examSubmitted ? 'disabled' : ''} onchange="updateLiveChoiceState('q_${qNum}', 'A')"> A) ${q.optionA}</label>
+                    <label class="option-item"><input type="radio" name="q_${qNum}" value="B" ${storedChoice === 'B' ? 'checked' : ''} ${examSubmitted ? 'disabled' : ''} onchange="updateLiveChoiceState('q_${qNum}', 'B')"> B) ${q.optionB}</label>
+                    <label class="option-item"><input type="radio" name="q_${qNum}" value="C" ${storedChoice === 'C' ? 'checked' : ''} ${examSubmitted ? 'disabled' : ''} onchange="updateLiveChoiceState('q_${qNum}', 'C')"> C) ${q.optionC}</label>
+                    <label class="option-item"><input type="radio" name="q_${qNum}" value="D" ${storedChoice === 'D' ? 'checked' : ''} ${examSubmitted ? 'disabled' : ''} onchange="updateLiveChoiceState('q_${qNum}', 'D')"> D) ${q.optionD}</label>
                 </div>
                 <div class="explanation-box" style="display: ${examSubmitted ? 'block' : 'none'};">💡 <strong>Explanation:</strong> ${q.explanation}</div>
             </div>`;
@@ -392,14 +401,14 @@ function renderQuestions() {
     document.getElementById("statQuestions").innerText = examQuestions.length;
 }
 
-function saveAnswerState(name, key) {
+function updateLiveChoiceState(name, value) {
     if (examSubmitted) return;
-    let savedAnswers = {};
+    let trackingAnswers = {};
     try {
-        savedAnswers = JSON.parse(localStorage.getItem("exam_saved_answers") || "{}");
-    } catch(e) { savedAnswers = {}; }
-    savedAnswers[name] = key;
-    localStorage.setItem("exam_saved_answers", JSON.stringify(savedAnswers));
+        trackingAnswers = JSON.parse(localStorage.getItem("exam_saved_answers") || "{}");
+    } catch(e) { trackingAnswers = {}; }
+    trackingAnswers[name] = value;
+    localStorage.setItem("exam_saved_answers", JSON.stringify(trackingAnswers));
 }
 
 function evaluateQuiz(event) {
@@ -409,8 +418,8 @@ function evaluateQuiz(event) {
     examSubmitted = true;
     localStorage.setItem("exam_status_submitted", "true");
     
-    let submitBtn = document.getElementById("submitButton");
-    if(submitBtn) submitBtn.style.display = "none";
+    let subBtn = document.getElementById("submitButton");
+    if(subBtn) subBtn.style.display = "none";
 
     let cards = document.querySelectorAll(".question-card");
     let correctCount = 0;
