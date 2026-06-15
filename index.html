@@ -247,7 +247,7 @@ h1 {
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 
 <script>
-const csvURL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vS9oBi0zipsDd6y-ASRbIlGXKxIPRyNGB6NVmWDtfqH1-d10EfPX3aT6EL3h1MGIRJepRfs2Wa-Bo6t/pub?gid=1558583524&single=true&output=csv";
+const csvURL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTaXaD9w24-H0UnC8xPkC2b6rvVD89sVFURXwoylUdWolFq89fUZLh6WYfGKr_YtA/pub?gid=1558583524&single=true&output=csv";
 
 let examQuestions = [];
 let totalSeconds = 60 * 60; 
@@ -255,11 +255,13 @@ let timerInterval = null;
 let examSubmitted = false;
 
 window.addEventListener('DOMContentLoaded', () => {
+    // Check if the exam was already completed in this browser session
     if (localStorage.getItem("exam_status_submitted") === "true") {
         examSubmitted = true;
         document.getElementById("timeCounter").innerText = "00:00";
     }
     loadQuestionsFromSheet();
+    addResetButtonToAdmin(); // Adds a manual reset tool for admins
 });
 
 function triggerAdminLogin() {
@@ -269,6 +271,26 @@ function triggerAdminLogin() {
         alert("🔓 Access granted. Admin Metrics Board unlocked successfully.");
     } else {
         alert("❌ Unauthorized. Incorrect access code.");
+    }
+}
+
+// Dynamically injects a hard-reset action button inside the admin control panel
+function addResetButtonToAdmin() {
+    const actionBar = document.querySelector(".middle-action-bar");
+    if (actionBar && !document.getElementById("resetSessionBtn")) {
+        let resetBtn = document.createElement("button");
+        resetBtn.id = "resetSessionBtn";
+        resetBtn.className = "excel-btn";
+        resetBtn.style.background = "linear-gradient(135deg, #d90429, #ef233c)";
+        resetBtn.style.marginRight = "10px";
+        resetBtn.innerHTML = "🔄 Reset & Clear Exam Session";
+        resetBtn.onclick = function() {
+            if(confirm("Are you sure you want to completely clear the local exam session and restart the timer?")) {
+                localStorage.clear();
+                window.location.reload();
+            }
+        };
+        actionBar.insertBefore(resetBtn, actionBar.firstChild);
     }
 }
 
@@ -340,7 +362,6 @@ function renderQuestions() {
     const container = document.getElementById("dynamicQuestionsContainer");
     let currentSection = ""; let htmlOutput = "";
 
-    // Load previously saved responses from storage array if present
     let savedAnswers = {};
     try {
         savedAnswers = JSON.parse(localStorage.getItem("exam_saved_answers") || "{}");
@@ -364,14 +385,13 @@ function renderQuestions() {
                     <label class="option-item"><input type="radio" name="q_${qNum}" value="C" ${previousSelected === 'C' ? 'checked' : ''} ${examSubmitted ? 'disabled' : ''} onchange="saveAnswerState('q_${qNum}', 'C')"> C) ${q.optionC}</label>
                     <label class="option-item"><input type="radio" name="q_${qNum}" value="D" ${previousSelected === 'D' ? 'checked' : ''} ${examSubmitted ? 'disabled' : ''} onchange="saveAnswerState('q_${qNum}', 'D')"> D) ${q.optionD}</label>
                 </div>
-                <div class="explanation-box">💡 <strong>Explanation:</strong> ${q.explanation}</div>
+                <div class="explanation-box" style="display: ${examSubmitted ? 'block' : 'none'};">💡 <strong>Explanation:</strong> ${q.explanation}</div>
             </div>`;
     });
     container.innerHTML = htmlOutput;
     document.getElementById("statQuestions").innerText = examQuestions.length;
 }
 
-// Automatically save options selected live to survive crashes/page refreshes
 function saveAnswerState(name, key) {
     if (examSubmitted) return;
     let savedAnswers = {};
@@ -388,7 +408,9 @@ function evaluateQuiz(event) {
     
     examSubmitted = true;
     localStorage.setItem("exam_status_submitted", "true");
-    document.getElementById("submitButton").style.display = "none";
+    
+    let submitBtn = document.getElementById("submitButton");
+    if(submitBtn) submitBtn.style.display = "none";
 
     let cards = document.querySelectorAll(".question-card");
     let correctCount = 0;
@@ -418,6 +440,7 @@ function evaluateQuiz(event) {
                 selectedInput.parentElement.classList.add("incorrect-style");
             }
         }
+        if (explanation) explanation.style.display = "block";
     });
 
     let totalQuestions = cards.length || 1;
