@@ -155,14 +155,6 @@ h1 {
 .option-item:hover { background: #e9ecef; }
 .option-item input { margin-right: 12px; accent-color: #0072ff; width: 18px; height: 18px; }
 
-.correct-style { background: #d4edda !important; border-color: #c3e6cb !important; color: #155724 !important; font-weight: bold; }
-.incorrect-style { background: #f8d7da !important; border-color: #f5c6cb !important; color: #721c24 !important; }
-
-.explanation-box {
-    margin-top: 15px; padding: 12px 15px; background: #fff3cd;
-    border-left: 4px solid #ffc107; border-radius: 4px; font-size: 13.5px; color: #856404; display: none;
-}
-
 .middle-action-bar {
     display: flex;
     justify-content: flex-end;
@@ -194,8 +186,9 @@ h1 {
 }
 
 .result-banner {
-    display: none; background: linear-gradient(135deg, #051329, #0a2246);
-    border: 1px solid #ffd166; border-radius: 14px; padding: 25px; text-align: center; margin-top: 25px;
+    display: none; background: linear-gradient(135deg, #000814, #001d3d);
+    border: 2px solid #b2ff59; border-radius: 14px; padding: 40px 25px; text-align: center; margin-top: 25px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.5);
 }
 .loading-box { text-align: center; padding: 40px; font-size: 18px; color: #ffe082; font-weight: bold; }
 </style>
@@ -227,19 +220,24 @@ h1 {
         </div>
     </div>
 
-    <form id="quizForm" onsubmit="evaluateQuiz(event)">
-        <div id="dynamicQuestionsContainer">
-            <div class="loading-box">⏳ Streaming exam paper directly from database matrices...</div>
-        </div>
+    <div id="quizContainer">
+        <form id="quizForm" onsubmit="evaluateQuiz(event)">
+            <div id="dynamicQuestionsContainer">
+                <div class="loading-box">⏳ Streaming exam paper directly from database matrices...</div>
+            </div>
 
-        <div class="submit-container">
-            <button type="submit" id="submitButton" class="submit-btn" style="display:none;">💥 Submit Examination Paper</button>
-        </div>
-    </form>
+            <div class="submit-container">
+                <button type="submit" id="submitButton" class="submit-btn" style="display:none;">💥 Submit Examination Paper</button>
+            </div>
+        </form>
+    </div>
 
     <div id="resultBanner" class="result-banner">
-        <h3>Exam Summary Analysis</h3>
-        <p id="scoreDisplay" style="font-size: 17px; line-height: 1.5;"></p>
+        <h2 style="color: #b2ff59; font-size: 28px; margin-bottom: 15px;">✅ Examination Submitted Successfully</h2>
+        <p style="font-size: 16px; color: #ffffff; line-height: 1.6;">
+            Thank you for completing the assessment.<br>
+            Your responses have been securely compiled and transmitted to the database matrices. You may close this tab.
+        </p>
     </div>
 </div>
 
@@ -247,16 +245,17 @@ h1 {
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 
 <script>
-// IMPORTANT: Put your completely published Google Sheet CSV Link right below
-const csvURL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vS9oBi0zipsDd6y-ASRbIlGXKxIPRyNGB6NVmWDtfqH1-d10EfPX3aT6EL3h1MGIRJepRfs2Wa-Bo6t/pub?gid=1558583524&single=true&output=csv";
+const csvURL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTaXaD9w24-H0UnC8xPkC2b6rvVD89sVFURXwoylUdWolFq89fUZLh6WYfGKr_YtA/pub?gid=1558583524&single=true&output=csv";
 
 let examQuestions = [];
 let totalSeconds = 60 * 60; 
 let timerInterval = null;
 let examSubmitted = false;
 
+// Track choices without showing evaluation styles
+let cachedRawSubmissions = []; 
+
 window.addEventListener('DOMContentLoaded', () => {
-    // Session state safeguard check
     if (localStorage.getItem("exam_status_submitted") === "true") {
         examSubmitted = true;
         document.getElementById("timeCounter").innerText = "00:00";
@@ -275,7 +274,6 @@ function triggerAdminLogin() {
     }
 }
 
-// Injects an administrative tool to force clear local memory and run tests from scratch
 function injectAdminResetUtility() {
     const actionBar = document.querySelector(".middle-action-bar");
     if (actionBar && !document.getElementById("clearExamCacheBtn")) {
@@ -321,14 +319,13 @@ function loadQuestionsFromSheet() {
     Papa.parse(csvURL, {
         download: true,
         header: true,
-        skipEmptyLines: 'greedy', // Aggressively strips out phantom trailing lines
+        skipEmptyLines: 'greedy',
         complete: function(results) {
             if(!results.data || results.data.length === 0) {
                 document.getElementById("dynamicQuestionsContainer").innerHTML = "<div class='loading-box'>❌ No clean data rows found inside your Google Sheet columns.</div>";
                 return;
             }
             
-            // Smart column search pipeline maps data safely even with space variations
             examQuestions = results.data.map(row => {
                 let keys = Object.keys(row);
                 let findVal = (terms) => {
@@ -348,20 +345,22 @@ function loadQuestionsFromSheet() {
             }).filter(q => q.question !== "");
 
             if(examQuestions.length === 0) {
-                document.getElementById("dynamicQuestionsContainer").innerHTML = "<div class='loading-box'>❌ Header match mismatch. Ensure column row 1 uses: section, question, optionA, optionB, optionC, optionD, correct</div>";
+                document.getElementById("dynamicQuestionsContainer").innerHTML = "<div class='loading-box'>❌ Column naming mapping error.</div>";
                 return;
             }
 
-            renderQuestions();
-            if (!examSubmitted) {
+            // If already submitted, hide the paper container immediately on load
+            if (examSubmitted) {
+                let qContainer = document.getElementById("quizContainer");
+                if (qContainer) qContainer.style.display = "none";
+                document.getElementById("timeCounter").innerText = "00:00";
+                document.getElementById("resultBanner").style.display = "block";
+                calculateMetricsBehindScenes();
+            } else {
+                renderQuestions();
                 document.getElementById("submitButton").style.display = "block";
                 initTimerMechanics();
-            } else {
-                evaluateQuiz(null);
             }
-        },
-        error: function() {
-            document.getElementById("dynamicQuestionsContainer").innerHTML = "<div class='loading-box'>❌ Network link broken. Verify Sheet is set to Comma-Separated Values (.csv).</div>";
         }
     });
 }
@@ -384,17 +383,15 @@ function renderQuestions() {
         
         let storedChoice = trackingAnswers[`q_${qNum}`] || "";
 
-        // Safe evaluation mode ensures no answers or explanation components show prematurely
         htmlOutput += `
             <div class="question-card" data-correct="${q.correct}" data-index="${qNum}">
                 <p class="question-text">Q${qNum}. ${q.question}</p>
                 <div class="options-list">
-                    <label class="option-item"><input type="radio" name="q_${qNum}" value="A" ${storedChoice === 'A' ? 'checked' : ''} ${examSubmitted ? 'disabled' : ''} onchange="updateLiveChoiceState('q_${qNum}', 'A')"> A) ${q.optionA}</label>
-                    <label class="option-item"><input type="radio" name="q_${qNum}" value="B" ${storedChoice === 'B' ? 'checked' : ''} ${examSubmitted ? 'disabled' : ''} onchange="updateLiveChoiceState('q_${qNum}', 'B')"> B) ${q.optionB}</label>
-                    <label class="option-item"><input type="radio" name="q_${qNum}" value="C" ${storedChoice === 'C' ? 'checked' : ''} ${examSubmitted ? 'disabled' : ''} onchange="updateLiveChoiceState('q_${qNum}', 'C')"> C) ${q.optionC}</label>
-                    <label class="option-item"><input type="radio" name="q_${qNum}" value="D" ${storedChoice === 'D' ? 'checked' : ''} ${examSubmitted ? 'disabled' : ''} onchange="updateLiveChoiceState('q_${qNum}', 'D')"> D) ${q.optionD}</label>
+                    <label class="option-item"><input type="radio" name="q_${qNum}" value="A" ${storedChoice === 'A' ? 'checked' : ''} onchange="updateLiveChoiceState('q_${qNum}', 'A')"> A) ${q.optionA}</label>
+                    <label class="option-item"><input type="radio" name="q_${qNum}" value="B" ${storedChoice === 'B' ? 'checked' : ''} onchange="updateLiveChoiceState('q_${qNum}', 'B')"> B) ${q.optionB}</label>
+                    <label class="option-item"><input type="radio" name="q_${qNum}" value="C" ${storedChoice === 'C' ? 'checked' : ''} onchange="updateLiveChoiceState('q_${qNum}', 'C')"> C) ${q.optionC}</label>
+                    <label class="option-item"><input type="radio" name="q_${qNum}" value="D" ${storedChoice === 'D' ? 'checked' : ''} onchange="updateLiveChoiceState('q_${qNum}', 'D')"> D) ${q.optionD}</label>
                 </div>
-                <div class="explanation-box" style="display: ${examSubmitted ? 'block' : 'none'};">💡 <strong>Explanation:</strong> ${q.explanation}</div>
             </div>`;
     });
     container.innerHTML = htmlOutput;
@@ -417,72 +414,69 @@ function evaluateQuiz(event) {
     
     examSubmitted = true;
     localStorage.setItem("exam_status_submitted", "true");
-    
-    let subBtn = document.getElementById("submitButton");
-    if(subBtn) subBtn.style.display = "none";
+    document.getElementById("timeCounter").innerText = "00:00";
 
-    let cards = document.querySelectorAll(".question-card");
+    calculateMetricsBehindScenes();
+
+    // 🔒 CLOSE THE PAPER: Hide the questions container entirely
+    let qContainer = document.getElementById("quizContainer");
+    if (qContainer) qContainer.style.display = "none";
+
+    // ✨ SHOW THE THANK YOU BANNER
+    let banner = document.getElementById("resultBanner");
+    if (banner) banner.style.display = "block";
+}
+
+// Computes structural background metrics for the hidden Admin Excel array generator
+function calculateMetricsBehindScenes() {
+    let trackingAnswers = {};
+    try {
+        trackingAnswers = JSON.parse(localStorage.getItem("exam_saved_answers") || "{}");
+    } catch(e) { trackingAnswers = {}; }
+
     let correctCount = 0;
     let wrongCount = 0;
     let attemptedCount = 0;
+    cachedRawSubmissions = [];
 
-    cards.forEach((card) => {
-        let correctAnswer = (card.getAttribute("data-correct") || "").trim();
-        let selectedInput = card.querySelector(`input[type="radio"]:checked`);
-        let optionLabels = card.querySelectorAll(".option-item");
-        let explanation = card.querySelector(".explanation-box");
+    examQuestions.forEach((q, index) => {
+        let qNum = index + 1;
+        let correctAnswer = q.correct.trim();
+        let studentAns = trackingAnswers[`q_${qNum}`] || "UNATTEMPTED";
 
-        optionLabels.forEach(label => {
-            let radio = label.querySelector('input');
-            if (radio) {
-                radio.disabled = true;
-                if (radio.value === correctAnswer) label.classList.add("correct-style");
-            }
-        });
-
-        if (selectedInput) {
+        if (studentAns !== "UNATTEMPTED") {
             attemptedCount++;
-            if (selectedInput.value === correctAnswer) {
+            if (studentAns === correctAnswer) {
                 correctCount++;
             } else {
                 wrongCount++;
-                selectedInput.parentElement.classList.add("incorrect-style");
             }
         }
-        if (explanation) explanation.style.display = "block";
+
+        cachedRawSubmissions.push({
+            "Question": `Q${qNum}`,
+            "Student Answer": studentAns,
+            "Correct Key": correctAnswer,
+            "Status": (studentAns === correctAnswer) ? "CORRECT" : (studentAns === "UNATTEMPTED" ? "SKIPPED" : "WRONG")
+        });
     });
 
-    let totalQuestions = cards.length || 1;
+    let totalQuestions = examQuestions.length || 1;
     let ratioPercentage = ((correctCount / totalQuestions) * 100).toFixed(1);
 
+    document.getElementById("statQuestions").innerText = totalQuestions;
     document.getElementById("statAttempted").innerText = attemptedCount;
     document.getElementById("statCorrect").innerText = correctCount;
     document.getElementById("statWrong").innerText = wrongCount;
     document.getElementById("statRatio").innerText = `${ratioPercentage}%`;
-
-    let banner = document.getElementById("resultBanner");
-    let display = document.getElementById("scoreDisplay");
-    if (display && banner) {
-        display.innerHTML = `Submission Received.<br>Correct Items: <strong>${correctCount}</strong> | Wrong Items: <strong>${wrongCount}</strong><br>Passing Accuracy: <strong>${ratioPercentage}%</strong>`;
-        banner.style.display = "block";
-    }
 }
 
 function downloadStatsExcel() {
-    let quizCards = document.querySelectorAll(".question-card"); let diagnosticExportRows = [];
-    quizCards.forEach((card) => {
-        let qNum = card.getAttribute("data-index");
-        let rightAns = card.getAttribute("data-correct");
-        let checkedInput = card.querySelector(`input[type="radio"]:checked`);
-        let studentAns = checkedInput ? checkedInput.value : "UNATTEMPTED";
-        diagnosticExportRows.push({
-            "Question": `Q${qNum}`,
-            "Student Answer": studentAns,
-            "Correct Key": rightAns,
-            "Status": (studentAns === rightAns) ? "CORRECT" : (studentAns === "UNATTEMPTED" ? "SKIPPED" : "WRONG")
-        });
-    });
-    let worksheet = XLSX.utils.json_to_sheet(diagnosticExportRows);
+    // If cache matrix is empty, reload calculations directly from memory maps
+    if (cachedRawSubmissions.length === 0) {
+        calculateMetricsBehindScenes();
+    }
+    let worksheet = XLSX.utils.json_to_sheet(cachedRawSubmissions);
     let workbook = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(workbook, worksheet, "Performance Summary");
     XLSX.writeFile(workbook, "Student_Exam_Result.xlsx");
