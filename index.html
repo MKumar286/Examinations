@@ -266,11 +266,12 @@
                 const qDiv = document.createElement("div");
                 qDiv.className = "question-block";
                 
+                // FIX 1: Removed the HTML "required" attribute from the radio inputs to allow empty submissions.
                 qDiv.innerHTML = `
                     <div class="question-text">Q${index + 1}. ${q.text}</div>
                     ${q.options.map((opt, optIdx) => `
                         <label class="option-label">
-                            <input type="radio" name="question_${q.id}" value="${String.fromCharCode(65 + optIdx)}" required>
+                            <input type="radio" name="question_${q.id}" value="${String.fromCharCode(65 + optIdx)}">
                             ${opt}
                         </label>
                     `).join('')}
@@ -372,9 +373,29 @@
                 document.getElementById("dashAnswered").innerText = answeredCount;
                 document.getElementById("dashNotAnswered").innerText = unAnsweredCount;
                 
-                // Read responses directly from Web App calculations
-                document.getElementById("dashCorrect").innerText = data.correctCount !== undefined ? data.correctCount : "0";
-                document.getElementById("dashIncorrect").innerText = data.incorrectCount !== undefined ? data.incorrectCount : "0";
+                // FIX 2: Bulletproof data verification check for correct/incorrect stats table values
+                let correctCount = 0;
+                let incorrectCount = 0;
+
+                if (data.correctCount !== undefined && data.incorrectCount !== undefined) {
+                    // Use backend evaluations if provided by the spreadsheet macro
+                    correctCount = data.correctCount;
+                    incorrectCount = data.incorrectCount;
+                } else {
+                    // Fail-safe calculation block if backend isn't processing scores yet
+                    globalQuestionsData.forEach((q, idx) => {
+                        if (studentAnswers[idx] !== "") {
+                            if (q.answer && studentAnswers[idx] === q.answer) {
+                                correctCount++;
+                            } else if (q.answer) {
+                                incorrectCount++;
+                            }
+                        }
+                    });
+                }
+
+                document.getElementById("dashCorrect").innerText = correctCount;
+                document.getElementById("dashIncorrect").innerText = incorrectCount;
 
                 // Reveal metric dashboard panel
                 document.getElementById("resultsDashboard").classList.remove("hidden");
