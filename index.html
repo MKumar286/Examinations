@@ -367,7 +367,7 @@
             .then(data => {
                 document.getElementById("processingState").classList.add("hidden");
 
-                // Inject metrics safely into dashboard slot structures
+                // Inject client counters directly (Guarantees Total, Answered, and Not Answered display accurately)
                 document.getElementById("dashTotal").innerText = globalQuestionsData.length;
                 document.getElementById("dashAnswered").innerText = answeredCount;
                 document.getElementById("dashNotAnswered").innerText = unAnsweredCount;
@@ -375,21 +375,34 @@
                 let correctCount = 0;
                 let incorrectCount = 0;
 
-                // Process grading metrics directly
-                if (data.correctCount !== undefined && data.incorrectCount !== undefined) {
+                // Priority Check 1: Extract verified calculations direct from database response object variables
+                if (data && data.correctCount !== undefined && data.incorrectCount !== undefined) {
                     correctCount = data.correctCount;
                     incorrectCount = data.incorrectCount;
-                } else {
-                    // Fail-safe calculation block if backend isn't mapping evaluation payload properties
+                } 
+                // Priority Check 2: Evaluate locally if tracking properties exist on the loaded items object payload
+                else {
+                    let hasKeys = false;
                     globalQuestionsData.forEach((q, idx) => {
-                        if (studentAnswers[idx] !== "") {
-                            if (q.answer && studentAnswers[idx] === q.answer) {
-                                correctCount++;
-                            } else if (q.answer) {
-                                incorrectCount++;
+                        // Check if answer keys exist under key descriptors like 'answer' or 'correctOpt'
+                        let keyField = q.answer || q.correctOpt; 
+                        if (keyField) {
+                            hasKeys = true;
+                            if (studentAnswers[idx] !== "") {
+                                if (studentAnswers[idx] === keyField) {
+                                    correctCount++;
+                                } else {
+                                    incorrectCount++;
+                                }
                             }
                         }
                     });
+                    
+                    // Priority Check 3: If zero grading descriptors exist anywhere, flag rows visually instead of dropping false zeros
+                    if (!hasKeys) {
+                        correctCount = "Recorded";
+                        incorrectCount = "Recorded";
+                    }
                 }
 
                 // Inject final calculated statistics values safely into the UI rows
