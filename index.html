@@ -166,9 +166,32 @@
             </form>
         </div>
 
-        <div id="statusCard" class="card hidden" style="text-align: center;">
-            <h2 id="statusTitle">Processing Submission...</h2>
-            <p id="statusMessage">Please wait while your answers are being synchronized with the master database.</p>
+        <div id="statusCard" class="card hidden">
+            <div id="processingState" style="text-align: center;">
+                <h2>Processing Submission...</h2>
+                <p>Please wait while your answers are being synchronized with the master database.</p>
+            </div>
+
+            <div id="resultsDashboard" class="hidden">
+                <h2 style="text-align: center; border-bottom: 2px solid var(--primary-color); padding-bottom: 10px; margin-top: 0; color: var(--dark-color);">
+                    Performance Dashboard
+                </h2>
+                <table style="width: 100%; border-collapse: collapse; margin: 20px 0; font-size: 1.1rem;">
+                    <tr style="border-bottom: 1px solid #e9ecef;"><td style="padding: 12px; font-weight: 600;">Total Questions:</td><td id="dashTotal" style="padding: 12px; text-align: right;">0</td></tr>
+                    <tr style="border-bottom: 1px solid #e9ecef;"><td style="padding: 12px; font-weight: 600; color: var(--primary-color);">Answered:</td><td id="dashAnswered" style="padding: 12px; text-align: right; color: var(--primary-color);">0</td></tr>
+                    <tr style="border-bottom: 1px solid #e9ecef;"><td style="padding: 12px; font-weight: 600; color: #6c757d;">Not Answered:</td><td id="dashNotAnswered" style="padding: 12px; text-align: right; color: #6c757d;">0</td></tr>
+                    <tr style="border-bottom: 1px solid #e9ecef;"><td style="padding: 12px; font-weight: 600; color: #198754;">Correct Answers:</td><td id="dashCorrect" style="padding: 12px; text-align: right; color: #198754;">0</td></tr>
+                    <tr style="border-bottom: 1px solid #e9ecef;"><td style="padding: 12px; font-weight: 600; color: var(--danger-color);">Incorrect Answers:</td><td id="dashIncorrect" style="padding: 12px; text-align: right; color: var(--danger-color);">0</td></tr>
+                </table>
+                <p id="countdownNotice" style="text-align: center; font-style: italic; color: #6c757d; margin-top: 20px;">
+                    Redirecting to final confirmation in <span id="redirectTimer" style="font-weight: bold; color: var(--dark-color);">10</span> seconds...
+                </p>
+            </div>
+
+            <div id="finalMessageState" class="hidden" style="text-align: center;">
+                <h2 id="statusTitle">Processing Submission...</h2>
+                <p id="statusMessage">Please wait while your answers are being synchronized with the master database.</p>
+            </div>
         </div>
 
     </div>
@@ -288,62 +311,3 @@
                 executeAutoSubmission("NORMAL_SUBMIT");
             }
         }
-
-        // Single Core Safe Submissions Pipeline
-        function executeAutoSubmission(reason) {
-            if (examSubmitted) return; // Prevent double execution loops
-            examSubmitted = true;
-            isExamActive = false;
-            clearInterval(timerInterval);
-
-            // Immediately switch views to block further UI manipulation
-            document.getElementById("examHeader").classList.add("hidden");
-            document.getElementById("examCard").classList.add("hidden");
-            document.getElementById("statusCard").classList.remove("hidden");
-
-            document.getElementById("submitBtn").disabled = true;
-
-            // Collect student responses mapped directly by target question item IDs
-            let studentAnswers = [];
-            globalQuestionsData.forEach(q => {
-                const checkedOption = document.querySelector(`input[name="question_${q.id}"]:checked`);
-                // If unanswered (due to auto-submit or timeout), send empty string ""
-                studentAnswers.push(checkedOption ? checkedOption.value : "");
-            });
-
-            const payload = {
-                rollNo: document.getElementById("rollNo").value,
-                name: document.getElementById("studentName").value,
-                branch: document.getElementById("branch").value,
-                answers: studentAnswers,
-                submissionReason: reason
-            };
-
-            // Post packet to Google Sheets
-            fetch(BACKEND_API_URL, {
-                method: "POST",
-                body: JSON.stringify(payload),
-                headers: {
-                    "Content-Type": "text/plain;charset=utf-8" // Bypasses CORS complications with Apps Script
-                }
-            })
-            .then(res => res.json())
-            .then(data => {
-                if (reason === "TAB_SWITCH_DETECTED" || reason === "WINDOW_FOCUS_LOST") {
-                    document.getElementById("statusTitle").innerText = "Exam Terminated";
-                    document.getElementById("statusTitle").style.color = "var(--danger-color)";
-                    document.getElementById("statusMessage").innerText = "Your paper was automatically submitted because you left or deselected the examination screen window.";
-                } else {
-                    document.getElementById("statusTitle").innerText = "Thank You!";
-                    document.getElementById("statusMessage").innerText = "Your examination paper has been successfully submitted and saved.";
-                }
-            })
-            .catch(err => {
-                document.getElementById("statusTitle").innerText = "Network Sync Notice";
-                document.getElementById("statusMessage").innerHTML = `Your response was stored locally, but failed to upload. <br><strong>Do not close this page.</strong> Please report to the TPO room immediately.`;
-                console.error("Critical submission failure: ", err);
-            });
-        }
-    </script>
-</body>
-</html>
