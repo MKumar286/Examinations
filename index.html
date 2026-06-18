@@ -3,269 +3,448 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Google Sheet Data Viewer</title>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+    <title>MGIT Placement Training - Examination Portal</title>
     <style>
+        :root {
+            --primary-color: #0d6efd;
+            --danger-color: #dc3545;
+            --dark-color: #212529;
+            --light-bg: #f8f9fa;
+        }
+
         body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-            margin: 20px;
-            background-color: #f4f6f9;
-            color: #333;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--light-bg);
+            margin: 0;
+            padding: 0;
+            user-select: none; /* Prevents copying text */
         }
-        .table-container {
+
+        /* Top Fixed Sticky Header */
+        .exam-header {
+            position: fixed;
+            top: 0;
+            left: 0;
             width: 100%;
-            overflow-x: auto; /* Adds a smooth horizontal scrollbar if table is wider than screen */
-            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
-            border-radius: 8px;
-            background: white;
+            background-color: #ffffff;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            z-index: 1000;
+            padding: 10px 20px;
+            box-sizing: border-box;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
         }
-        /* The structural layout for auto-adjusting columns */
-        table {
-            border-collapse: collapse;
-            width: max-content; /* Dynamically shrinks/grows to exactly fit the content width */
-            min-width: 100%;    /* Ensures it spans at least full screen width if data is sparse */
+
+        .timer-box {
+            background-color: var(--danger-color);
+            color: white;
+            padding: 10px 20px;
+            border-radius: 5px;
+            font-weight: bold;
+            font-size: 1.2rem;
         }
-        th, td {
-            border-bottom: 1px solid #e1e4e8;
-            padding: 12px 16px;
-            text-align: left;
-            /* Crucial: Prevents text wrapping, forcing columns to expand to the exact text width */
-            white-space: nowrap; 
-        }
-        th {
-            background-color: #1f2937;
-            color: #ffffff;
-            font-weight: 600;
-            position: sticky;
-            top: 0; /* Keeps header visible if you scroll vertically */
-        }
-        tr:nth-child(even) td {
-            background-color: #f8fafc;
-        }
-        tr:hover td {
-            background-color: #f1f5f9; /* Subtle row highlight on hover */
-        }
-        .loading {
+
+        /* Main Container layout */
+        .main-container {
+            max-width: 800px;
+            margin: 100px auto 40px auto;
             padding: 20px;
-            font-style: italic;
-            color: #666;
         }
+
+        .card {
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+            margin-bottom: 20px;
+        }
+
+        .student-details-form input, .student-details-form select {
+            width: 100%;
+            padding: 10px;
+            margin: 10px 0 20px 0;
+            border: 1px solid #ced4da;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+
+        .question-block {
+            margin-bottom: 25px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid #e9ecef;
+        }
+
+        .question-text {
+            font-weight: 600;
+            font-size: 1.1rem;
+            margin-bottom: 15px;
+            color: var(--dark-color);
+        }
+
+        .option-label {
+            display: block;
+            padding: 12px;
+            background: var(--light-bg);
+            margin-bottom: 8px;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background 0.2s;
+            border: 1px solid #e9ecef;
+        }
+
+        .option-label:hover {
+            background: #e2e6ea;
+        }
+
+        .option-label input {
+            margin-right: 10px;
+        }
+
+        .btn-submit {
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            font-size: 1rem;
+            border-radius: 5px;
+            cursor: pointer;
+            width: 100%;
+            font-weight: bold;
+        }
+
+        .btn-submit:disabled {
+            background-color: #cccccc;
+            cursor: not-allowed;
+        }
+
+        .hidden { display: none; }
     </style>
 </head>
 <body>
 
-    <h2>Live Data Viewer</h2>
-    
-    <div class="table-container">
-        <div id="loading-state" class="loading">Loading live data from Google Sheets...</div>
-        <table id="sheet-table" style="display: none;">
-            <thead id="table-head"></thead>
-            <tbody id="table-body"></tbody>
-        </table>
+    <div id="examHeader" class="exam-header hidden">
+        <div>
+            <h3 style="margin:0; color: var(--dark-color);">Campus Placement Assessment</h3>
+            <span id="displayStudentInfo" style="font-size:0.9rem; color:#6c757d;"></span>
+        </div>
+        <div class="timer-box">Time Left: <span id="timerText">60:00</span></div>
+    </div>
+
+    <div class="main-container">
+        
+        <div id="registrationCard" class="card">
+            <h2 style="margin-top:0; border-bottom: 2px solid var(--primary-color); padding-bottom: 10px;">Student Information</h2>
+            <form id="studentForm" onsubmit="startExamination(event)" class="student-details-form">
+                <label for="studentName">Full Name</label>
+                <input type="text" id="studentName" required placeholder="Enter your full name">
+
+                <label for="rollNo">Hall Ticket / Roll Number</label>
+                <input type="text" id="rollNo" required placeholder="e.g., 22R11A05XX">
+
+                <label for="branch">Branch</label>
+                <select id="branch" required>
+                    <option value="">-- Select Branch --</option>
+                    <option value="CSE">CSE</option>
+                    <option value="IT">IT</option>
+                    <option value="ECE">ECE</option>
+                    <option value="EEE">EEE</option>
+                    <option value="Mech">Mechanical</option>
+                    <option value="Civil">Civil</option>
+                </select>
+
+                <button type="submit" class="btn-submit">Start Examination</button>
+            </form>
+        </div>
+
+        <div id="examCard" class="card hidden">
+            <form id="quizForm" onsubmit="manualSubmit(event)">
+                <div id="questionsContainer">
+                    <p>Loading assessment payload safely...</p>
+                </div>
+                <button type="submit" id="submitBtn" class="btn-submit">Submit Examination</button>
+            </form>
+        </div>
+
+        <div id="statusCard" class="card hidden">
+            <div id="processingState" style="text-align: center;">
+                <h2>Processing Submission...</h2>
+                <p>Please wait while your answers are being synchronized with the master database.</p>
+            </div>
+
+            <div id="resultsDashboard" class="hidden">
+                <h2 style="text-align: center; border-bottom: 2px solid var(--primary-color); padding-bottom: 10px; margin-top: 0; color: var(--dark-color);">
+                    Performance Dashboard
+                </h2>
+                <table style="width: 100%; border-collapse: collapse; margin: 20px 0; font-size: 1.1rem;">
+                    <tr style="border-bottom: 1px solid #e9ecef;"><td style="padding: 12px; font-weight: 600;">Total Questions:</td><td id="dashTotal" style="padding: 12px; text-align: right;">0</td></tr>
+                    <tr style="border-bottom: 1px solid #e9ecef;"><td style="padding: 12px; font-weight: 600; color: var(--primary-color);">Answered:</td><td id="dashAnswered" style="padding: 12px; text-align: right; color: var(--primary-color);">0</td></tr>
+                    <tr style="border-bottom: 1px solid #e9ecef;"><td style="padding: 12px; font-weight: 600; color: #6c757d;">Not Answered:</td><td id="dashNotAnswered" style="padding: 12px; text-align: right; color: #6c757d;">0</td></tr>
+                    <tr style="border-bottom: 1px solid #e9ecef;"><td style="padding: 12px; font-weight: 600; color: #198754;">Correct Answers:</td><td id="dashCorrect" style="padding: 12px; text-align: right; color: #198754;">0</td></tr>
+                    <tr style="border-bottom: 1px solid #e9ecef;"><td style="padding: 12px; font-weight: 600; color: var(--danger-color);">Incorrect Answers:</td><td id="dashIncorrect" style="padding: 12px; text-align: right; color: var(--danger-color);">0</td></tr>
+                </table>
+                <p id="countdownNotice" style="text-align: center; font-style: italic; color: #6c757d; margin-top: 20px;">
+                    Redirecting to final confirmation in <span id="redirectTimer" style="font-weight: bold; color: var(--dark-color);">10</span> seconds...
+                </p>
+            </div>
+
+            <div id="finalMessageState" class="hidden" style="text-align: center;">
+                <h2 id="statusTitle">Processing Submission...</h2>
+                <p id="statusMessage">Please wait while your answers are being synchronized with the master database.</p>
+            </div>
+        </div>
+
     </div>
 
     <script>
-        // Your specific Google Sheet CSV Export URL
-        const csvUrl = '<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Google Sheet Data Viewer</title>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
-    <style>
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-            margin: 20px;
-            background-color: #f4f6f9;
-            color: #333;
-        }
-        .table-container {
-            width: 100%;
-            overflow-x: auto; /* Adds a smooth horizontal scrollbar if table is wider than screen */
-            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
-            border-radius: 8px;
-            background: white;
-        }
-        /* The structural layout for auto-adjusting columns */
-        table {
-            border-collapse: collapse;
-            width: max-content; /* Dynamically shrinks/grows to exactly fit the content width */
-            min-width: 100%;    /* Ensures it spans at least full screen width if data is sparse */
-        }
-        th, td {
-            border-bottom: 1px solid #e1e4e8;
-            padding: 12px 16px;
-            text-align: left;
-            /* Crucial: Prevents text wrapping, forcing columns to expand to the exact text width */
-            white-space: nowrap; 
-        }
-        th {
-            background-color: #1f2937;
-            color: #ffffff;
-            font-weight: 600;
-            position: sticky;
-            top: 0; /* Keeps header visible if you scroll vertically */
-        }
-        tr:nth-child(even) td {
-            background-color: #f8fafc;
-        }
-        tr:hover td {
-            background-color: #f1f5f9; /* Subtle row highlight on hover */
-        }
-        .loading {
-            padding: 20px;
-            font-style: italic;
-            color: #666;
-        }
-    </style>
-</head>
-<body>
+        // CONFIGURATION: Replace with your deployed Google Web App URL
+        const BACKEND_API_URL = "https://script.google.com/macros/s/AKfycbxN-J-l7I6m2-v6OlshEXdq85N06_m-Mrv99VUEFmSi4DiRc9UGmNKDU65M3iGy5ffoBw/exec";
+        const EXAM_DURATION_MINUTES = 60; 
 
-    <h2>Live Data Viewer</h2>
-    
-    <div class="table-container">
-        <div id="loading-state" class="loading">Loading live data from Google Sheets...</div>
-        <table id="sheet-table" style="display: none;">
-            <thead id="table-head"></thead>
-            <tbody id="table-body"></tbody>
-        </table>
-    </div>
+        let totalTimeSeconds = EXAM_DURATION_MINUTES * 60;
+        let timerInterval = null;
+        let isExamActive = false;
+        let examSubmitted = false;
+        let globalQuestionsData = [];
 
-    <script>
-        // Your specific Google Sheet CSV Export URL
-        const csvUrl = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQVGHSnygzd6lIkieye30zp-iVX_unEpKnZ_I3m__BhX0NfHicM_WvEJmo25mONaw/pub?gid=1824938792&single=true&output=csv';
-
-        async function loadSheetData() {
-            try {
-                const response = await fetch(csvUrl);
-                if (!response.ok) throw new Error('Network response was not ok');
-                
-                const csvText = await response.text();
-                
-                // Parse CSV using PapaParse (handles quotes, commas within cells, etc.)
-                Papa.parse(csvText, {
-                    skipEmptyLines: true,
-                    complete: function(results) {
-                        renderTable(results.data);
-                    },
-                    error: function(err) {
-                        throw new Error(err.message);
+        // Fetch Questions securely from Google Apps Script on startup
+        window.addEventListener('DOMContentLoaded', () => {
+            fetch(BACKEND_API_URL)
+                .then(res => {
+                    if (!res.ok) {
+                        throw new Error("HTTP connection error: " + res.status);
                     }
+                    return res.json();
+                })
+                .then(data => {
+                    if (Array.isArray(data)) {
+                        globalQuestionsData = data;
+                        console.log("Exam questions loaded successfully.");
+                    } else {
+                        throw new Error("Data payload is not recognized as a structured array.");
+                    }
+                })
+                .catch(err => {
+                    alert("Error initializing exam data. Check your web app deployment settings or internet connection.");
+                    console.error("Fetch Failure Details: ", err);
                 });
-            } catch (error) {
-                console.error("Error loading sheet:", error);
-                document.getElementById('loading-state').innerHTML = 
-                    `<span style="color: red;">Error loading data. Verify that the Google Sheet is actively published to the web.</span>`;
-            }
-        }
+        });
 
-        function renderTable(data) {
-            if (data.length === 0) {
-                document.getElementById('loading-state').textContent = "No data found in the sheet.";
+        // Initialize exam environment
+        function startExamination(event) {
+            event.preventDefault();
+            
+            if(globalQuestionsData.length === 0) {
+                alert("Exam payload is still loading from database. Please wait 3 seconds and click again.");
                 return;
             }
 
-            const headContainer = document.getElementById('table-head');
-            const bodyContainer = document.getElementById('table-body');
+            // Bind metadata
+            const name = document.getElementById("studentName").value;
+            const roll = document.getElementById("rollNo").value;
+            const branch = document.getElementById("branch").value;
+            document.getElementById("displayStudentInfo").innerText = `${name} | ${roll} (${branch})`;
+
+            // Toggle views
+            document.getElementById("registrationCard").classList.add("hidden");
+            document.getElementById("examHeader").classList.remove("hidden");
+            document.getElementById("examCard").classList.remove("hidden");
+
+            renderQuestions(globalQuestionsData);
             
-            // 1. Build Header Row (First row of your sheet)
-            const headerRow = document.createElement('tr');
-            data[0].forEach(headerText => {
-                const th = document.createElement('th');
-                th.textContent = headerText;
-                headerRow.appendChild(th);
-            });
-            headContainer.appendChild(headerRow);
-
-            // 2. Build Data Rows
-            for (let i = 1; i < data.length; i++) {
-                const rowData = data[i];
-                const tr = document.createElement('tr');
-                
-                rowData.forEach(cellText => {
-                    const td = document.createElement('td');
-                    td.textContent = cellText;
-                    tr.appendChild(td);
-                });
-                bodyContainer.appendChild(tr);
-            }
-
-            // Hide loading message and display the completed table
-            document.getElementById('loading-state').style.display = 'none';
-            document.getElementById('sheet-table').style.display = 'table';
+            // Set guards
+            isExamActive = true;
+            startTimer();
         }
 
-        // Initialize fetching on page load
-        loadSheetData();
-    </script>
+        // Generate elements without exposing answer keys
+        function renderQuestions(questions) {
+            const container = document.getElementById("questionsContainer");
+            container.innerHTML = "";
 
-</body>
-</html>';
+            questions.forEach((q, index) => {
+                const qDiv = document.createElement("div");
+                qDiv.className = "question-block";
+                
+                qDiv.innerHTML = `
+                    <div class="question-text">Q${index + 1}. ${q.text}</div>
+                    ${q.options.map((opt, optIdx) => `
+                        <label class="option-label">
+                            <input type="radio" name="question_${q.id}" value="${String.fromCharCode(65 + optIdx)}">
+                            ${opt}
+                        </label>
+                    `).join('')}
+                `;
+                container.appendChild(qDiv);
+            });
+        }
 
-        async function loadSheetData() {
-            try {
-                const response = await fetch(csvUrl);
-                if (!response.ok) throw new Error('Network response was not ok');
+        // Countdown Execution
+        function startTimer() {
+            timerInterval = setInterval(() => {
+                totalTimeSeconds--;
                 
-                const csvText = await response.text();
+                let mins = Math.floor(totalTimeSeconds / 60);
+                let secs = totalTimeSeconds % 60;
                 
-                // Parse CSV using PapaParse (handles quotes, commas within cells, etc.)
-                Papa.parse(csvText, {
-                    skipEmptyLines: true,
-                    complete: function(results) {
-                        renderTable(results.data);
-                    },
-                    error: function(err) {
-                        throw new Error(err.message);
+                document.getElementById("timerText").innerText = 
+                    `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+
+                if (totalTimeSeconds <= 0) {
+                    clearInterval(timerInterval);
+                    executeAutoSubmission("TIMEOUT");
+                }
+            }, 1000);
+        }
+
+        // ANTI-CHEATING HOOKS
+        document.addEventListener("visibilitychange", () => {
+            if (document.hidden && isExamActive && !examSubmitted) {
+                executeAutoSubmission("TAB_SWITCH_DETECTED");
+            }
+        });
+
+        window.addEventListener("blur", () => {
+            if (isExamActive && !examSubmitted) {
+                executeAutoSubmission("WINDOW_FOCUS_LOST");
+            }
+        });
+
+        // Catch Manual Button Press
+        function manualSubmit(event) {
+            event.preventDefault();
+            if (confirm("Are you sure you want to finalize and submit your answers?")) {
+                executeAutoSubmission("NORMAL_SUBMIT");
+            }
+        }
+
+        // Single Core Safe Submissions Pipeline
+        function executeAutoSubmission(reason) {
+            if (examSubmitted) return; 
+            examSubmitted = true;
+            isExamActive = false;
+            clearInterval(timerInterval);
+
+            // Switch views to block further UI manipulation
+            document.getElementById("examHeader").classList.add("hidden");
+            document.getElementById("examCard").classList.add("hidden");
+            document.getElementById("statusCard").classList.remove("hidden");
+            document.getElementById("submitBtn").disabled = true;
+
+            // Metrics formulation variables
+            let answeredCount = 0;
+            let unAnsweredCount = 0;
+            let studentAnswers = [];
+            
+            globalQuestionsData.forEach(q => {
+                const checkedOption = document.querySelector(`input[name="question_${q.id}"]:checked`);
+                if (checkedOption) {
+                    studentAnswers.push(checkedOption.value);
+                    answeredCount++;
+                } else {
+                    studentAnswers.push("");
+                    unAnsweredCount++;
+                }
+            });
+
+            const payload = {
+                rollNo: document.getElementById("rollNo").value,
+                name: document.getElementById("studentName").value,
+                branch: document.getElementById("branch").value,
+                answers: studentAnswers,
+                submissionReason: reason
+            };
+
+            // Post packet to Google Sheets
+            fetch(BACKEND_API_URL, {
+                method: "POST",
+                body: JSON.stringify(payload),
+                headers: {
+                    "Content-Type": "text/plain;charset=utf-8"
+                }
+            })
+            .then(res => res.json())
+            .then(data => {
+                document.getElementById("processingState").classList.add("hidden");
+
+                // Inject client counters directly (Guarantees Total, Answered, and Not Answered display accurately)
+                document.getElementById("dashTotal").innerText = globalQuestionsData.length;
+                document.getElementById("dashAnswered").innerText = answeredCount;
+                document.getElementById("dashNotAnswered").innerText = unAnsweredCount;
+                
+                let correctCount = 0;
+                let incorrectCount = 0;
+
+                // Priority Check 1: Extract verified calculations direct from database response object variables
+                if (data && data.correctCount !== undefined && data.incorrectCount !== undefined) {
+                    correctCount = data.correctCount;
+                    incorrectCount = data.incorrectCount;
+                } 
+                // Priority Check 2: Evaluate locally if tracking properties exist on the loaded items object payload
+                else {
+                    let hasKeys = false;
+                    globalQuestionsData.forEach((q, idx) => {
+                        // Check if answer keys exist under key descriptors like 'answer' or 'correctOpt'
+                        let keyField = q.answer || q.correctOpt; 
+                        if (keyField) {
+                            hasKeys = true;
+                            if (studentAnswers[idx] !== "") {
+                                if (studentAnswers[idx] === keyField) {
+                                    correctCount++;
+                                } else {
+                                    incorrectCount++;
+                                }
+                            }
+                        }
+                    });
+                    
+                    // Priority Check 3: If zero grading descriptors exist anywhere, flag rows visually instead of dropping false zeros
+                    if (!hasKeys) {
+                        correctCount = "Recorded";
+                        incorrectCount = "Recorded";
                     }
-                });
-            } catch (error) {
-                console.error("Error loading sheet:", error);
-                document.getElementById('loading-state').innerHTML = 
-                    `<span style="color: red;">Error loading data. Verify that the Google Sheet is actively published to the web.</span>`;
-            }
-        }
+                }
 
-        function renderTable(data) {
-            if (data.length === 0) {
-                document.getElementById('loading-state').textContent = "No data found in the sheet.";
-                return;
-            }
+                // Inject final calculated statistics values safely into the UI rows
+                document.getElementById("dashCorrect").innerText = correctCount;
+                document.getElementById("dashIncorrect").innerText = incorrectCount;
 
-            const headContainer = document.getElementById('table-head');
-            const bodyContainer = document.getElementById('table-body');
-            
-            // 1. Build Header Row (First row of your sheet)
-            const headerRow = document.createElement('tr');
-            data[0].forEach(headerText => {
-                const th = document.createElement('th');
-                th.textContent = headerText;
-                headerRow.appendChild(th);
+                // Reveal metric dashboard panel
+                document.getElementById("resultsDashboard").classList.remove("hidden");
+
+                // Establish 10 second delay loop sequence
+                let countdownTime = 10;
+                const dashboardCountdown = setInterval(() => {
+                    countdownTime--;
+                    document.getElementById("redirectTimer").innerText = countdownTime;
+
+                    if (countdownTime <= 0) {
+                        clearInterval(dashboardCountdown);
+                        document.getElementById("resultsDashboard").classList.add("hidden");
+                        
+                        // Formulate text elements depending on exam context
+                        if (reason === "TAB_SWITCH_DETECTED" || reason === "WINDOW_FOCUS_LOST") {
+                            document.getElementById("statusTitle").innerText = "Exam Terminated";
+                            document.getElementById("statusTitle").style.color = "var(--danger-color)";
+                            document.getElementById("statusMessage").innerText = "Your paper was automatically submitted because you left or deselected the examination screen window.";
+                        } else {
+                            document.getElementById("statusTitle").innerText = "Thank You!";
+                            document.getElementById("statusTitle").style.color = "var(--dark-color)";
+                            document.getElementById("statusMessage").innerText = "Your examination paper has been successfully submitted and saved.";
+                        }
+                        
+                        document.getElementById("finalMessageState").classList.remove("hidden");
+                    }
+                }, 1000);
+            })
+            .catch(err => {
+                document.getElementById("processingState").classList.add("hidden");
+                document.getElementById("statusTitle").innerText = "Network Sync Notice";
+                document.getElementById("statusMessage").innerHTML = `Your response was stored locally, but failed to upload. <br><strong>Do not close this page.</strong> Please report to the TPO room immediately.`;
+                document.getElementById("finalMessageState").classList.remove("hidden");
+                console.error("Critical submission failure: ", err);
             });
-            headContainer.appendChild(headerRow);
-
-            // 2. Build Data Rows
-            for (let i = 1; i < data.length; i++) {
-                const rowData = data[i];
-                const tr = document.createElement('tr');
-                
-                rowData.forEach(cellText => {
-                    const td = document.createElement('td');
-                    td.textContent = cellText;
-                    tr.appendChild(td);
-                });
-                bodyContainer.appendChild(tr);
-            }
-
-            // Hide loading message and display the completed table
-            document.getElementById('loading-state').style.display = 'none';
-            document.getElementById('sheet-table').style.display = 'table';
         }
-
-        // Initialize fetching on page load
-        loadSheetData();
     </script>
-
 </body>
 </html>
