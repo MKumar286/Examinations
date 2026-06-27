@@ -10,6 +10,7 @@
             --danger-color: #dc3545;
             --dark-color: #212529;
             --light-bg: #f8f9fa;
+            --warning-color: #ffc107;
         }
 
         body {
@@ -118,6 +119,26 @@
             cursor: not-allowed;
         }
 
+        /* Instruction styles */
+        .instruction-list {
+            padding-left: 20px;
+            line-height: 1.6;
+        }
+        
+        .instruction-list li {
+            margin-bottom: 12px;
+            color: #495057;
+        }
+
+        .warning-box {
+            background-color: #fff3cd;
+            border-left: 4px solid var(--warning-color);
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 4px;
+            color: #664d03;
+        }
+
         .hidden { display: none; }
     </style>
 </head>
@@ -133,9 +154,10 @@
 
     <div class="main-container">
         
+        <!-- STEP 1: Registration Card -->
         <div id="registrationCard" class="card">
             <h2 style="margin-top:0; border-bottom: 2px solid var(--primary-color); padding-bottom: 10px;">Student Information</h2>
-            <form id="studentForm" onsubmit="startExamination(event)" class="student-details-form">
+            <form id="studentForm" onsubmit="showInstructions(event)" class="student-details-form">
                 <label for="studentName">Full Name</label>
                 <input type="text" id="studentName" required placeholder="Enter your full name">
 
@@ -153,10 +175,32 @@
                     <option value="Civil">Civil</option>
                 </select>
 
-                <button type="submit" class="btn-submit">Start Examination</button>
+                <button type="submit" class="btn-submit">Continue to Instructions</button>
             </form>
         </div>
 
+        <!-- NEW STEP 1.5: Instructions Card -->
+        <div id="instructionsCard" class="card hidden">
+            <h2 style="margin-top:0; border-bottom: 2px solid var(--primary-color); padding-bottom: 10px;">Examination Instructions</h2>
+            
+            <p>Please review the following rules carefully before starting your assessment:</p>
+            
+            <ul class="instruction-list">
+                <li><strong>Duration:</strong> You have a total of <strong>60 minutes</strong> to complete the exam. The countdown timer will start immediately on the next screen.</li>
+                <li><strong>Submission:</strong> Ensure all mandatory questions are answered before hitting the global submit button at the bottom of the page.</li>
+                <li><strong>Navigation Constraint:</strong> Do not use the browser's back button, refresh shortcut (F5), or close button while the assessment is live. Doing so could result in data loss.</li>
+                <li><strong>Copy Protection:</strong> Text selection, copying, and right-clicking are strictly disabled across the entire platform interface.</li>
+            </ul>
+
+            <div class="warning-box">
+                <strong>CRITICAL ANTI-CHEAT WARNING:</strong> <br>
+                This system tracks window activity closely. If you minimize this browser, switch to another tab, or click anywhere outside the active examination screen, <strong>your paper will instantly lock and automatically submit as an academic integrity violation.</strong> Keep focus on this window at all times.
+            </div>
+
+            <button type="button" onclick="startExamination()" class="btn-submit" style="background-color: #198754;">I Am Ready - Begin Examination</button>
+        </div>
+
+        <!-- STEP 2: The Active Exam Card -->
         <div id="examCard" class="card hidden">
             <form id="quizForm" onsubmit="manualSubmit(event)">
                 <div id="questionsContainer">
@@ -166,6 +210,7 @@
             </form>
         </div>
 
+        <!-- STEP 3: Status / Processing Cards -->
         <div id="statusCard" class="card hidden">
             <div id="processingState" style="text-align: center;">
                 <h2>Processing Submission...</h2>
@@ -230,29 +275,36 @@
                 });
         });
 
-        // Initialize exam environment
-        function startExamination(event) {
+        // NEW STEP: Process details and route to the instructions panel
+        function showInstructions(event) {
             event.preventDefault();
             
             if(globalQuestionsData.length === 0) {
-                alert("Exam payload is still loading from database. Please wait 3 seconds and click again.");
+                alert("Exam payload is still loading from database. Please wait a moment and click again.");
                 return;
             }
 
-            // Bind metadata
+            // Bind student metadata to the top-level header space
             const name = document.getElementById("studentName").value;
             const roll = document.getElementById("rollNo").value;
             const branch = document.getElementById("branch").value;
             document.getElementById("displayStudentInfo").innerText = `${name} | ${roll} (${branch})`;
 
-            // Toggle views
+            // Hide the details form and expose the rules card instead
             document.getElementById("registrationCard").classList.add("hidden");
+            document.getElementById("instructionsCard").classList.remove("hidden");
+        }
+
+        // Modified: Triggers when user formally clicks the "Begin Examination" button
+        function startExamination() {
+            // Toggle views to reveal questions and live stats header
+            document.getElementById("instructionsCard").classList.add("hidden");
             document.getElementById("examHeader").classList.remove("hidden");
             document.getElementById("examCard").classList.remove("hidden");
 
             renderQuestions(globalQuestionsData);
             
-            // Set guards
+            // Activate timer loops and anti-cheat hooks safely
             isExamActive = true;
             startTimer();
         }
@@ -384,7 +436,6 @@
                 else {
                     let hasKeys = false;
                     globalQuestionsData.forEach((q, idx) => {
-                        // Check if answer keys exist under key descriptors like 'answer' or 'correctOpt'
                         let keyField = q.answer || q.correctOpt; 
                         if (keyField) {
                             hasKeys = true;
@@ -398,7 +449,6 @@
                         }
                     });
                     
-                    // Priority Check 3: If zero grading descriptors exist anywhere, flag rows visually instead of dropping false zeros
                     if (!hasKeys) {
                         correctCount = "Recorded";
                         incorrectCount = "Recorded";
