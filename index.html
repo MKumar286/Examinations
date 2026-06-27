@@ -288,11 +288,11 @@
             <ul class="instruction-list">
                 <li><strong>Duration:</strong> You have a total of <strong>60 minutes</strong> to complete the exam.</li>
                 <li><strong>Interface Navigation:</strong> Use the right-hand question palette side panel to track your progress and quickly hop between individual questions.</li>
-                <li><strong>Copy Protection:</strong> Text selection, copying shortcuts, and standard right-clicking functions are disabled across the interface.</li>
+                <li><strong>Network Recovery Guard:</strong> In case of system disruption, freezing, or accidental refresh, re-enter your details to safely resume your exam state without progress loss.</li>
             </ul>
             <div class="warning-box">
                 <strong>CRITICAL ANTI-CHEAT WARNING:</strong><br>
-                This system tracks active window window focal visibility. If you switch tabs, minimize the window, or interact with elements outside the browser workspace, <strong>your assessment session will instantly freeze and perform an auto-submission.</strong>
+                This system tracks active window focal visibility. If you switch tabs, minimize the window, or interact with elements outside the browser workspace, <strong>your assessment session will instantly freeze and perform an auto-submission.</strong>
             </div>
             <button type="button" onclick="startExamination()" class="btn-submit-exam">I Am Ready - Begin Examination</button>
         </div>
@@ -303,7 +303,6 @@
             <!-- Left Panel: Main Question Window Container Card -->
             <div class="card question-display-panel">
                 <div id="activeQuestionArea">
-                    <!-- Dynamic updates target space via script functions -->
                     <p>Loading active problem space content configuration safely...</p>
                 </div>
                 
@@ -339,7 +338,7 @@
             </div>
         </div>
 
-        <!-- STEP 4: Network Post Submissions processing modules and performance dashboard views -->
+        <!-- STEP 4: Post Submissions Processing Module -->
         <div id="statusCard" class="card hidden">
             <div id="processingState" style="text-align: center;">
                 <h2>Processing Submission...</h2>
@@ -381,17 +380,7 @@
         
         let globalQuestionsData = [];
         let currentQuestionIndex = 0;
-        
-        // Comprehensive matrix keeping track of dynamic state across responses matching database structures
         let userProgressState = []; 
-        /* Inside object items format schema structural design:
-           {
-              id: question_id,
-              selectedAnswer: "A"/"B"/"",
-              isVisited: true/false,
-              isMarkedReview: true/false
-           }
-        */
 
         // Fetch Questions securely from Google Apps Script on startup
         window.addEventListener('DOMContentLoaded', () => {
@@ -403,13 +392,6 @@
                 .then(data => {
                     if (Array.isArray(data)) {
                         globalQuestionsData = data;
-                        // Initialize state tracking array matching incoming backend rows sizes mappings elements
-                        userProgressState = data.map(q => ({
-                            id: q.id,
-                            selectedAnswer: "",
-                            isVisited: false,
-                            isMarkedReview: false
-                        }));
                         console.log("Exam configurations established successfully.");
                     } else {
                         throw new Error("Data payload structural typing layout error.");
@@ -432,8 +414,60 @@
             const branch = document.getElementById("branch").value;
             document.getElementById("displayStudentInfo").innerText = `${name} | ${roll} (${branch})`;
 
+            // PERSISTENCE SYNC CHECK: Check if an active session exists for this Roll Number
+            const savedSessionKey = "exam_session_" + roll.trim().toUpperCase();
+            const localSavedData = localStorage.getItem(savedSessionKey);
+
+            if (localSavedData) {
+                try {
+                    const session = JSON.parse(localSavedData);
+                    userProgressState = session.progressState;
+                    currentQuestionIndex = session.lastIndex;
+                    totalTimeSeconds = session.timeLeft;
+                    console.log("Existing valid session state found. Ready to recover.");
+                } catch(e) {
+                    console.error("Session backup read failure. Resetting progress matrix.", e);
+                    resetProgressMatrix();
+                }
+            } else {
+                resetProgressMatrix();
+            }
+
             document.getElementById("registrationCard").classList.add("hidden");
             document.getElementById("instructionsCard").classList.remove("hidden");
+        }
+
+        function resetProgressMatrix() {
+            userProgressState = globalQuestionsData.map(q => ({
+                id: q.id,
+                selectedAnswer: "",
+                isVisited: false,
+                isMarkedReview: false
+            }));
+            currentQuestionIndex = 0;
+            totalTimeSeconds = EXAM_DURATION_MINUTES * 60;
+        }
+
+        // Saves current state into browser memory
+        function saveSessionToLocalStorage() {
+            const roll = document.getElementById("rollNo").value;
+            if (!roll) return;
+            const savedSessionKey = "exam_session_" + roll.trim().toUpperCase();
+            
+            const sessionPayload = {
+                progressState: userProgressState,
+                lastIndex: currentQuestionIndex,
+                timeLeft: totalTimeSeconds
+            };
+            localStorage.setItem(savedSessionKey, JSON.stringify(sessionPayload));
+        }
+
+        // Clears specific user data upon normal completed finalization
+        function clearSessionFromLocalStorage() {
+            const roll = document.getElementById("rollNo").value;
+            if (!roll) return;
+            const savedSessionKey = "exam_session_" + roll.trim().toUpperCase();
+            localStorage.removeItem(savedSessionKey);
         }
 
         function startExamination() {
@@ -441,8 +475,8 @@
             document.getElementById("examWorkspace").classList.remove("hidden");
             document.getElementById("examHeader").classList.remove("hidden");
 
-            // Mark question 1 as visited immediately upon initiation sequence
-            userProgressState[0].isVisited = true;
+            // Mark current index as visited
+            userProgressState[currentQuestionIndex].isVisited = true;
             
             buildProgressPaletteMarkup();
             loadActiveQuestionToWorkspace();
@@ -451,7 +485,6 @@
             startTimer();
         }
 
-        // Generate progress monitoring button elements cleanly into sidebar wrapper grid frame
         function buildProgressPaletteMarkup() {
             const grid = document.getElementById("questionPaletteGrid");
             grid.innerHTML = "";
@@ -462,10 +495,8 @@
                 btn.className = "palette-btn";
                 btn.innerText = idx + 1;
                 
-                // Active targeted tracking ring styling hooks 
                 if (idx === currentQuestionIndex) btn.classList.add("active-q");
 
-                // Assign status styling matching user operational actions layout rules
                 if (state.isMarkedReview) {
                     btn.classList.add("status-review");
                 } else if (state.selectedAnswer !== "") {
@@ -474,13 +505,11 @@
                     btn.classList.add("status-unanswered");
                 }
 
-                // Make specific pallet circle buttons interactive to jump directly to that question
                 btn.onclick = () => jumpToTargetQuestion(idx);
                 grid.appendChild(btn);
             });
         }
 
-        // Render the current question in the main left panel area
         function loadActiveQuestionToWorkspace() {
             const container = document.getElementById("activeQuestionArea");
             const q = globalQuestionsData[currentQuestionIndex];
@@ -503,16 +532,17 @@
                 </div>
             `;
 
-            // Toggle accessibility controls matching page boundaries loops
             document.getElementById("btnPrev").disabled = currentQuestionIndex === 0;
             document.getElementById("btnNext").innerText = (currentQuestionIndex === globalQuestionsData.length - 1) ? "Save & Finish" : "Save & Next";
+            
+            // Backup progress instantly when loading a question
+            saveSessionToLocalStorage();
         }
 
         function handleSelectionChange(selectedLetter) {
             userProgressState[currentQuestionIndex].selectedAnswer = selectedLetter;
-            userProgressState[currentQuestionIndex].isMarkedReview = false; // Answering removes the review flag
+            userProgressState[currentQuestionIndex].isMarkedReview = false; 
             
-            // Re-render components to show highlighted color blocks on choices
             loadActiveQuestionToWorkspace();
             buildProgressPaletteMarkup();
         }
@@ -538,7 +568,6 @@
                 buildProgressPaletteMarkup();
                 loadActiveQuestionToWorkspace();
             } else {
-                // If it was the last question, direct them to final confirmation
                 handleFinalSubmissionIntent();
             }
         }
@@ -560,9 +589,15 @@
         }
 
         function startTimer() {
+            if (timerInterval) clearInterval(timerInterval); // Avoid duplicate threads
             timerInterval = setInterval(() => {
                 totalTimeSeconds--;
                 
+                // Track time remaining to local storage every second
+                if (totalTimeSeconds % 5 === 0) {
+                    saveSessionToLocalStorage();
+                }
+
                 let mins = Math.floor(totalTimeSeconds / 60);
                 let secs = totalTimeSeconds % 60;
                 
@@ -590,10 +625,16 @@
         });
 
         function handleFinalSubmissionIntent() {
-            // Count completed items to display inside user prompt message window fields strings
             const answered = userProgressState.filter(s => s.selectedAnswer !== "").length;
-            if (confirm(`Summary: You have answered ${answered} out of ${globalQuestionsData.length} questions.\n\nAre you sure you want to finalize and submit your assessment paper?`)) {
+            
+            // FIX: Safely parse confirmation window response structure
+            const userChoiceConfirm = confirm(`Summary: You have answered ${answered} out of ${globalQuestionsData.length} questions.\n\nAre you sure you want to finalize and submit your assessment paper?`);
+            
+            if (userChoiceConfirm === true) {
                 executeAutoSubmission("NORMAL_SUBMIT");
+            } else {
+                // Clicking Cancel now exits the routine safely without affecting the live examination workspace
+                console.log("Submission canceled by student. Session context preserved.");
             }
         }
 
@@ -602,8 +643,10 @@
             examSubmitted = true;
             isExamActive = false;
             clearInterval(timerInterval);
+            
+            // Remove local storage safety backups on absolute final submission pipeline execution
+            clearSessionFromLocalStorage();
 
-            // Hide the workspace and header
             document.getElementById("examHeader").classList.add("hidden");
             document.getElementById("examWorkspace").classList.add("hidden");
             document.getElementById("statusCard").classList.remove("hidden");
