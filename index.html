@@ -7,10 +7,12 @@
     <style>
         :root {
             --primary-color: #0d6efd;
+            --success-color: #198754;
             --danger-color: #dc3545;
+            --warning-color: #ffc107;
             --dark-color: #212529;
             --light-bg: #f8f9fa;
-            --warning-color: #ffc107;
+            --border-color: #dee2e6;
         }
 
         body {
@@ -46,11 +48,12 @@
             font-size: 1.2rem;
         }
 
-        /* Main Container layout */
+        /* Layout Management */
         .main-container {
-            max-width: 800px;
-            margin: 100px auto 40px auto;
+            max-width: 1200px;
+            margin: 90px auto 30px auto;
             padding: 20px;
+            box-sizing: border-box;
         }
 
         .card {
@@ -61,6 +64,15 @@
             margin-bottom: 20px;
         }
 
+        /* 2-Column Split View for Active Exam */
+        .exam-workspace {
+            display: grid;
+            grid-template-columns: 1fr 320px;
+            gap: 20px;
+            align-items: start;
+        }
+
+        /* Form Controls */
         .student-details-form input, .student-details-form select {
             width: 100%;
             padding: 10px;
@@ -70,27 +82,30 @@
             box-sizing: border-box;
         }
 
-        .question-block {
-            margin-bottom: 25px;
-            padding-bottom: 20px;
-            border-bottom: 1px solid #e9ecef;
+        /* Left Workspace: Live Question Layout */
+        .question-display-panel {
+            min-height: 350px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
         }
 
         .question-text {
             font-weight: 600;
-            font-size: 1.1rem;
-            margin-bottom: 15px;
+            font-size: 1.2rem;
+            margin-bottom: 20px;
             color: var(--dark-color);
+            line-height: 1.5;
         }
 
         .option-label {
             display: block;
-            padding: 12px;
+            padding: 14px;
             background: var(--light-bg);
-            margin-bottom: 8px;
-            border-radius: 4px;
+            margin-bottom: 12px;
+            border-radius: 6px;
             cursor: pointer;
-            transition: background 0.2s;
+            transition: all 0.2s;
             border: 1px solid #e9ecef;
         }
 
@@ -98,52 +113,139 @@
             background: #e2e6ea;
         }
 
-        .option-label input {
-            margin-right: 10px;
+        .option-label.selected-option {
+            background: #e7f1ff;
+            border-color: var(--primary-color);
         }
 
-        .btn-submit {
-            background-color: var(--primary-color);
+        .option-label input {
+            margin-right: 12px;
+        }
+
+        /* Action Buttons Block */
+        .action-button-row {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 30px;
+            border-top: 1px solid var(--border-color);
+            padding-top: 20px;
+        }
+
+        .btn-action {
+            padding: 10px 20px;
+            font-size: 0.95rem;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: 600;
+            border: 1px solid transparent;
+            transition: background 0.2s;
+        }
+
+        .btn-nav-prev { background: #6c757d; color: white; }
+        .btn-nav-next { background: var(--primary-color); color: white; }
+        .btn-review { background: var(--warning-color); color: #212529; }
+        .btn-clear { background: transparent; border-color: #6c757d; color: #6c757d; }
+
+        .btn-action:disabled {
+            background-color: #e9ecef;
+            color: #adb5bd;
+            border-color: transparent;
+            cursor: not-allowed;
+        }
+
+        /* Right Workspace: Navigation Sidebar */
+        .sidebar-panel {
+            position: sticky;
+            top: 90px;
+        }
+
+        .sidebar-title {
+            margin-top: 0;
+            font-size: 1.1rem;
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 10px;
+            color: var(--dark-color);
+        }
+
+        .question-grid {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 10px;
+            margin-bottom: 25px;
+            max-height: 250px;
+            overflow-y: auto;
+            padding-right: 5px;
+        }
+
+        /* Palette States matching real exams */
+        .palette-btn {
+            height: 40px;
+            width: 40px;
+            border-radius: 50%;
+            border: 1px solid #ced4da;
+            background-color: #e9ecef; /* Default: Unvisited */
+            color: var(--dark-color);
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-size: 0.9rem;
+        }
+
+        .palette-btn:hover { border-color: #6c757d; }
+        .palette-btn.active-q { border: 2px dashed var(--dark-color); box-shadow: 0 0 0 2px white inset; }
+        
+        /* Exam States Colors */
+        .palette-btn.status-unanswered { background-color: var(--danger-color); color: white; border-color: var(--danger-color); }
+        .palette-btn.status-answered { background-color: var(--success-color); color: white; border-color: var(--success-color); }
+        .palette-btn.status-review { background-color: var(--warning-color); color: #212529; border-color: var(--warning-color); }
+
+        /* Legend Display */
+        .legend-container {
+            font-size: 0.85rem;
+            border-top: 1px solid var(--border-color);
+            padding-top: 15px;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+
+        .legend-dot {
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            margin-right: 10px;
+            display: inline-block;
+        }
+
+        .btn-submit-exam {
+            background-color: var(--success-color);
             color: white;
             border: none;
-            padding: 12px 30px;
+            padding: 12px;
             font-size: 1rem;
             border-radius: 5px;
             cursor: pointer;
             width: 100%;
             font-weight: bold;
+            margin-top: 15px;
         }
 
-        .btn-submit:disabled {
-            background-color: #cccccc;
-            cursor: not-allowed;
-        }
-
-        /* Instruction styles */
-        .instruction-list {
-            padding-left: 20px;
-            line-height: 1.6;
-        }
-        
-        .instruction-list li {
-            margin-bottom: 12px;
-            color: #495057;
-        }
-
-        .warning-box {
-            background-color: #fff3cd;
-            border-left: 4px solid var(--warning-color);
-            padding: 15px;
-            margin: 20px 0;
-            border-radius: 4px;
-            color: #664d03;
-        }
-
-        .hidden { display: none; }
+        /* General layout helpers */
+        .instruction-list { padding-left: 20px; line-height: 1.6; }
+        .instruction-list li { margin-bottom: 12px; color: #495057; }
+        .warning-box { background-color: #fff3cd; border-left: 4px solid var(--warning-color); padding: 15px; margin: 20px 0; border-radius: 4px; color: #664d03; }
+        .hidden { display: none !important; }
     </style>
 </head>
 <body>
 
+    <!-- Fixed Header -->
     <div id="examHeader" class="exam-header hidden">
         <div>
             <h3 style="margin:0; color: var(--dark-color);">Campus Placement Assessment</h3>
@@ -154,7 +256,7 @@
 
     <div class="main-container">
         
-        <!-- STEP 1: Registration Card -->
+        <!-- STEP 1: Student Details Form -->
         <div id="registrationCard" class="card">
             <h2 style="margin-top:0; border-bottom: 2px solid var(--primary-color); padding-bottom: 10px;">Student Information</h2>
             <form id="studentForm" onsubmit="showInstructions(event)" class="student-details-form">
@@ -175,42 +277,69 @@
                     <option value="Civil">Civil</option>
                 </select>
 
-                <button type="submit" class="btn-submit">Continue to Instructions</button>
+                <button type="submit" class="btn-submit-exam" style="background-color: var(--primary-color);">Continue to Instructions</button>
             </form>
         </div>
 
-        <!-- NEW STEP 1.5: Instructions Card -->
+        <!-- STEP 2: Instructions View -->
         <div id="instructionsCard" class="card hidden">
             <h2 style="margin-top:0; border-bottom: 2px solid var(--primary-color); padding-bottom: 10px;">Examination Instructions</h2>
-            
             <p>Please review the following rules carefully before starting your assessment:</p>
-            
             <ul class="instruction-list">
-                <li><strong>Duration:</strong> You have a total of <strong>60 minutes</strong> to complete the exam. The countdown timer will start immediately on the next screen.</li>
-                <li><strong>Submission:</strong> Ensure all mandatory questions are answered before hitting the global submit button at the bottom of the page.</li>
-                <li><strong>Navigation Constraint:</strong> Do not use the browser's back button, refresh shortcut (F5), or close button while the assessment is live. Doing so could result in data loss.</li>
-                <li><strong>Copy Protection:</strong> Text selection, copying, and right-clicking are strictly disabled across the entire platform interface.</li>
+                <li><strong>Duration:</strong> You have a total of <strong>60 minutes</strong> to complete the exam.</li>
+                <li><strong>Interface Navigation:</strong> Use the right-hand question palette side panel to track your progress and quickly hop between individual questions.</li>
+                <li><strong>Copy Protection:</strong> Text selection, copying shortcuts, and standard right-clicking functions are disabled across the interface.</li>
             </ul>
-
             <div class="warning-box">
-                <strong>CRITICAL ANTI-CHEAT WARNING:</strong> <br>
-                This system tracks window activity closely. If you minimize this browser, switch to another tab, or click anywhere outside the active examination screen, <strong>your paper will instantly lock and automatically submit as an academic integrity violation.</strong> Keep focus on this window at all times.
+                <strong>CRITICAL ANTI-CHEAT WARNING:</strong><br>
+                This system tracks active window window focal visibility. If you switch tabs, minimize the window, or interact with elements outside the browser workspace, <strong>your assessment session will instantly freeze and perform an auto-submission.</strong>
+            </div>
+            <button type="button" onclick="startExamination()" class="btn-submit-exam">I Am Ready - Begin Examination</button>
+        </div>
+
+        <!-- STEP 3: Split Workspace Exam Screen Layout -->
+        <div id="examWorkspace" class="exam-workspace hidden">
+            
+            <!-- Left Panel: Main Question Window Container Card -->
+            <div class="card question-display-panel">
+                <div id="activeQuestionArea">
+                    <!-- Dynamic updates target space via script functions -->
+                    <p>Loading active problem space content configuration safely...</p>
+                </div>
+                
+                <!-- Action Navigation Layout Structure -->
+                <div class="action-button-row">
+                    <div>
+                        <button type="button" onclick="handlePreviousQuestion()" id="btnPrev" class="btn-action btn-nav-prev">Previous</button>
+                        <button type="button" onclick="handleMarkForReview()" id="btnReview" class="btn-action btn-review">Mark For Review</button>
+                    </div>
+                    <div>
+                        <button type="button" onclick="handleClearSelection()" id="btnClear" class="btn-action btn-clear">Clear Response</button>
+                        <button type="button" onclick="handleNextQuestion()" id="btnNext" class="btn-action btn-nav-next">Save & Next</button>
+                    </div>
+                </div>
             </div>
 
-            <button type="button" onclick="startExamination()" class="btn-submit" style="background-color: #198754;">I Am Ready - Begin Examination</button>
-        </div>
-
-        <!-- STEP 2: The Active Exam Card -->
-        <div id="examCard" class="card hidden">
-            <form id="quizForm" onsubmit="manualSubmit(event)">
-                <div id="questionsContainer">
-                    <p>Loading assessment payload safely...</p>
+            <!-- Right Panel: Fixed Progress Control Sidebar Card Container -->
+            <div class="card sidebar-panel">
+                <h4 class="sidebar-title">Question Palette</h4>
+                
+                <!-- Numeric Nav Matrix Wrapper Grid -->
+                <div id="questionPaletteGrid" class="question-grid"></div>
+                
+                <!-- Color Mapping Informational Legend -->
+                <div class="legend-container">
+                    <div class="legend-item"><span class="legend-dot" style="background: #e9ecef; border: 1px solid #ced4da;"></span> Not Visited</div>
+                    <div class="legend-item"><span class="legend-dot" style="background: var(--danger-color);"></span> Not Answered</div>
+                    <div class="legend-item"><span class="legend-dot" style="background: var(--success-color);"></span> Answered</div>
+                    <div class="legend-item"><span class="legend-dot" style="background: var(--warning-color);"></span> Marked for Review</div>
                 </div>
-                <button type="submit" id="submitBtn" class="btn-submit">Submit Examination</button>
-            </form>
+                
+                <button type="button" onclick="handleFinalSubmissionIntent()" class="btn-submit-exam">Submit Examination</button>
+            </div>
         </div>
 
-        <!-- STEP 3: Status / Processing Cards -->
+        <!-- STEP 4: Network Post Submissions processing modules and performance dashboard views -->
         <div id="statusCard" class="card hidden">
             <div id="processingState" style="text-align: center;">
                 <h2>Processing Submission...</h2>
@@ -242,7 +371,6 @@
     </div>
 
     <script>
-        // CONFIGURATION: Replace with your deployed Google Web App URL
         const BACKEND_API_URL = "https://script.google.com/macros/s/AKfycbxN-J-l7I6m2-v6OlshEXdq85N06_m-Mrv99VUEFmSi4DiRc9UGmNKDU65M3iGy5ffoBw/exec";
         const EXAM_DURATION_MINUTES = 60; 
 
@@ -250,88 +378,187 @@
         let timerInterval = null;
         let isExamActive = false;
         let examSubmitted = false;
+        
         let globalQuestionsData = [];
+        let currentQuestionIndex = 0;
+        
+        // Comprehensive matrix keeping track of dynamic state across responses matching database structures
+        let userProgressState = []; 
+        /* Inside object items format schema structural design:
+           {
+              id: question_id,
+              selectedAnswer: "A"/"B"/"",
+              isVisited: true/false,
+              isMarkedReview: true/false
+           }
+        */
 
         // Fetch Questions securely from Google Apps Script on startup
         window.addEventListener('DOMContentLoaded', () => {
             fetch(BACKEND_API_URL)
                 .then(res => {
-                    if (!res.ok) {
-                        throw new Error("HTTP connection error: " + res.status);
-                    }
+                    if (!res.ok) throw new Error("HTTP connection error: " + res.status);
                     return res.json();
                 })
                 .then(data => {
                     if (Array.isArray(data)) {
                         globalQuestionsData = data;
-                        console.log("Exam questions loaded successfully.");
+                        // Initialize state tracking array matching incoming backend rows sizes mappings elements
+                        userProgressState = data.map(q => ({
+                            id: q.id,
+                            selectedAnswer: "",
+                            isVisited: false,
+                            isMarkedReview: false
+                        }));
+                        console.log("Exam configurations established successfully.");
                     } else {
-                        throw new Error("Data payload is not recognized as a structured array.");
+                        throw new Error("Data payload structural typing layout error.");
                     }
                 })
                 .catch(err => {
-                    alert("Error initializing exam data. Check your web app deployment settings or internet connection.");
-                    console.error("Fetch Failure Details: ", err);
+                    alert("Error initializing exam data. Check connection settings.");
+                    console.error(err);
                 });
         });
 
-        // NEW STEP: Process details and route to the instructions panel
         function showInstructions(event) {
             event.preventDefault();
-            
             if(globalQuestionsData.length === 0) {
-                alert("Exam payload is still loading from database. Please wait a moment and click again.");
+                alert("Exam payload still syncing. Please hold a moment.");
                 return;
             }
-
-            // Bind student metadata to the top-level header space
             const name = document.getElementById("studentName").value;
             const roll = document.getElementById("rollNo").value;
             const branch = document.getElementById("branch").value;
             document.getElementById("displayStudentInfo").innerText = `${name} | ${roll} (${branch})`;
 
-            // Hide the details form and expose the rules card instead
             document.getElementById("registrationCard").classList.add("hidden");
             document.getElementById("instructionsCard").classList.remove("hidden");
         }
 
-        // Modified: Triggers when user formally clicks the "Begin Examination" button
         function startExamination() {
-            // Toggle views to reveal questions and live stats header
             document.getElementById("instructionsCard").classList.add("hidden");
+            document.getElementById("examWorkspace").classList.remove("hidden");
             document.getElementById("examHeader").classList.remove("hidden");
-            document.getElementById("examCard").classList.remove("hidden");
 
-            renderQuestions(globalQuestionsData);
+            // Mark question 1 as visited immediately upon initiation sequence
+            userProgressState[0].isVisited = true;
             
-            // Activate timer loops and anti-cheat hooks safely
+            buildProgressPaletteMarkup();
+            loadActiveQuestionToWorkspace();
+            
             isExamActive = true;
             startTimer();
         }
 
-        // Generate elements without exposing answer keys
-        function renderQuestions(questions) {
-            const container = document.getElementById("questionsContainer");
-            container.innerHTML = "";
+        // Generate progress monitoring button elements cleanly into sidebar wrapper grid frame
+        function buildProgressPaletteMarkup() {
+            const grid = document.getElementById("questionPaletteGrid");
+            grid.innerHTML = "";
 
-            questions.forEach((q, index) => {
-                const qDiv = document.createElement("div");
-                qDiv.className = "question-block";
+            userProgressState.forEach((state, idx) => {
+                const btn = document.createElement("button");
+                btn.type = "button";
+                btn.className = "palette-btn";
+                btn.innerText = idx + 1;
                 
-                qDiv.innerHTML = `
-                    <div class="question-text">Q${index + 1}. ${q.text}</div>
-                    ${q.options.map((opt, optIdx) => `
-                        <label class="option-label">
-                            <input type="radio" name="question_${q.id}" value="${String.fromCharCode(65 + optIdx)}">
-                            ${opt}
-                        </label>
-                    `).join('')}
-                `;
-                container.appendChild(qDiv);
+                // Active targeted tracking ring styling hooks 
+                if (idx === currentQuestionIndex) btn.classList.add("active-q");
+
+                // Assign status styling matching user operational actions layout rules
+                if (state.isMarkedReview) {
+                    btn.classList.add("status-review");
+                } else if (state.selectedAnswer !== "") {
+                    btn.classList.add("status-answered");
+                } else if (state.isVisited) {
+                    btn.classList.add("status-unanswered");
+                }
+
+                // Make specific pallet circle buttons interactive to jump directly to that question
+                btn.onclick = () => jumpToTargetQuestion(idx);
+                grid.appendChild(btn);
             });
         }
 
-        // Countdown Execution
+        // Render the current question in the main left panel area
+        function loadActiveQuestionToWorkspace() {
+            const container = document.getElementById("activeQuestionArea");
+            const q = globalQuestionsData[currentQuestionIndex];
+            const state = userProgressState[currentQuestionIndex];
+
+            container.innerHTML = `
+                <div class="question-text"><strong>Question ${currentQuestionIndex + 1}:</strong><br>${q.text}</div>
+                <div class="options-wrapper">
+                    ${q.options.map((opt, idx) => {
+                        const letter = String.fromCharCode(65 + idx);
+                        const isChecked = state.selectedAnswer === letter ? "checked" : "";
+                        const divClass = state.selectedAnswer === letter ? "option-label selected-option" : "option-label";
+                        return `
+                            <label class="${divClass}" id="labelOpt_${letter}">
+                                <input type="radio" name="active_problem_opt" value="${letter}" ${isChecked} onchange="handleSelectionChange('${letter}')">
+                                <strong>${letter}.</strong> ${opt}
+                            </label>
+                        `;
+                    }).join('')}
+                </div>
+            `;
+
+            // Toggle accessibility controls matching page boundaries loops
+            document.getElementById("btnPrev").disabled = currentQuestionIndex === 0;
+            document.getElementById("btnNext").innerText = (currentQuestionIndex === globalQuestionsData.length - 1) ? "Save & Finish" : "Save & Next";
+        }
+
+        function handleSelectionChange(selectedLetter) {
+            userProgressState[currentQuestionIndex].selectedAnswer = selectedLetter;
+            userProgressState[currentQuestionIndex].isMarkedReview = false; // Answering removes the review flag
+            
+            // Re-render components to show highlighted color blocks on choices
+            loadActiveQuestionToWorkspace();
+            buildProgressPaletteMarkup();
+        }
+
+        function handleClearSelection() {
+            userProgressState[currentQuestionIndex].selectedAnswer = "";
+            userProgressState[currentQuestionIndex].isMarkedReview = false;
+            
+            loadActiveQuestionToWorkspace();
+            buildProgressPaletteMarkup();
+        }
+
+        function handleMarkForReview() {
+            userProgressState[currentQuestionIndex].isMarkedReview = true;
+            buildProgressPaletteMarkup();
+            handleNextQuestion();
+        }
+
+        function handleNextQuestion() {
+            if (currentQuestionIndex < globalQuestionsData.length - 1) {
+                currentQuestionIndex++;
+                userProgressState[currentQuestionIndex].isVisited = true;
+                buildProgressPaletteMarkup();
+                loadActiveQuestionToWorkspace();
+            } else {
+                // If it was the last question, direct them to final confirmation
+                handleFinalSubmissionIntent();
+            }
+        }
+
+        function handlePreviousQuestion() {
+            if (currentQuestionIndex > 0) {
+                currentQuestionIndex--;
+                userProgressState[currentQuestionIndex].isVisited = true;
+                buildProgressPaletteMarkup();
+                loadActiveQuestionToWorkspace();
+            }
+        }
+
+        function jumpToTargetQuestion(targetIdx) {
+            currentQuestionIndex = targetIdx;
+            userProgressState[currentQuestionIndex].isVisited = true;
+            buildProgressPaletteMarkup();
+            loadActiveQuestionToWorkspace();
+        }
+
         function startTimer() {
             timerInterval = setInterval(() => {
                 totalTimeSeconds--;
@@ -362,39 +589,34 @@
             }
         });
 
-        // Catch Manual Button Press
-        function manualSubmit(event) {
-            event.preventDefault();
-            if (confirm("Are you sure you want to finalize and submit your answers?")) {
+        function handleFinalSubmissionIntent() {
+            // Count completed items to display inside user prompt message window fields strings
+            const answered = userProgressState.filter(s => s.selectedAnswer !== "").length;
+            if (confirm(`Summary: You have answered ${answered} out of ${globalQuestionsData.length} questions.\n\nAre you sure you want to finalize and submit your assessment paper?`)) {
                 executeAutoSubmission("NORMAL_SUBMIT");
             }
         }
 
-        // Single Core Safe Submissions Pipeline
         function executeAutoSubmission(reason) {
             if (examSubmitted) return; 
             examSubmitted = true;
             isExamActive = false;
             clearInterval(timerInterval);
 
-            // Switch views to block further UI manipulation
+            // Hide the workspace and header
             document.getElementById("examHeader").classList.add("hidden");
-            document.getElementById("examCard").classList.add("hidden");
+            document.getElementById("examWorkspace").classList.add("hidden");
             document.getElementById("statusCard").classList.remove("hidden");
-            document.getElementById("submitBtn").disabled = true;
 
-            // Metrics formulation variables
             let answeredCount = 0;
             let unAnsweredCount = 0;
-            let studentAnswers = [];
+            let flatAnswersList = [];
             
-            globalQuestionsData.forEach(q => {
-                const checkedOption = document.querySelector(`input[name="question_${q.id}"]:checked`);
-                if (checkedOption) {
-                    studentAnswers.push(checkedOption.value);
+            userProgressState.forEach(state => {
+                flatAnswersList.push(state.selectedAnswer);
+                if (state.selectedAnswer !== "") {
                     answeredCount++;
                 } else {
-                    studentAnswers.push("");
                     unAnsweredCount++;
                 }
             });
@@ -403,23 +625,19 @@
                 rollNo: document.getElementById("rollNo").value,
                 name: document.getElementById("studentName").value,
                 branch: document.getElementById("branch").value,
-                answers: studentAnswers,
+                answers: flatAnswersList,
                 submissionReason: reason
             };
 
-            // Post packet to Google Sheets
             fetch(BACKEND_API_URL, {
                 method: "POST",
                 body: JSON.stringify(payload),
-                headers: {
-                    "Content-Type": "text/plain;charset=utf-8"
-                }
+                headers: { "Content-Type": "text/plain;charset=utf-8" }
             })
             .then(res => res.json())
             .then(data => {
                 document.getElementById("processingState").classList.add("hidden");
 
-                // Inject client counters directly (Guarantees Total, Answered, and Not Answered display accurately)
                 document.getElementById("dashTotal").innerText = globalQuestionsData.length;
                 document.getElementById("dashAnswered").innerText = answeredCount;
                 document.getElementById("dashNotAnswered").innerText = unAnsweredCount;
@@ -427,42 +645,31 @@
                 let correctCount = 0;
                 let incorrectCount = 0;
 
-                // Priority Check 1: Extract verified calculations direct from database response object variables
                 if (data && data.correctCount !== undefined && data.incorrectCount !== undefined) {
                     correctCount = data.correctCount;
                     incorrectCount = data.incorrectCount;
-                } 
-                // Priority Check 2: Evaluate locally if tracking properties exist on the loaded items object payload
-                else {
+                } else {
                     let hasKeys = false;
                     globalQuestionsData.forEach((q, idx) => {
                         let keyField = q.answer || q.correctOpt; 
                         if (keyField) {
                             hasKeys = true;
-                            if (studentAnswers[idx] !== "") {
-                                if (studentAnswers[idx] === keyField) {
-                                    correctCount++;
-                                } else {
-                                    incorrectCount++;
-                                }
+                            if (flatAnswersList[idx] !== "") {
+                                if (flatAnswersList[idx] === keyField) correctCount++;
+                                else incorrectCount++;
                             }
                         }
                     });
-                    
                     if (!hasKeys) {
                         correctCount = "Recorded";
                         incorrectCount = "Recorded";
                     }
                 }
 
-                // Inject final calculated statistics values safely into the UI rows
                 document.getElementById("dashCorrect").innerText = correctCount;
                 document.getElementById("dashIncorrect").innerText = incorrectCount;
-
-                // Reveal metric dashboard panel
                 document.getElementById("resultsDashboard").classList.remove("hidden");
 
-                // Establish 10 second delay loop sequence
                 let countdownTime = 10;
                 const dashboardCountdown = setInterval(() => {
                     countdownTime--;
@@ -472,7 +679,6 @@
                         clearInterval(dashboardCountdown);
                         document.getElementById("resultsDashboard").classList.add("hidden");
                         
-                        // Formulate text elements depending on exam context
                         if (reason === "TAB_SWITCH_DETECTED" || reason === "WINDOW_FOCUS_LOST") {
                             document.getElementById("statusTitle").innerText = "Exam Terminated";
                             document.getElementById("statusTitle").style.color = "var(--danger-color)";
@@ -482,7 +688,6 @@
                             document.getElementById("statusTitle").style.color = "var(--dark-color)";
                             document.getElementById("statusMessage").innerText = "Your examination paper has been successfully submitted and saved.";
                         }
-                        
                         document.getElementById("finalMessageState").classList.remove("hidden");
                     }
                 }, 1000);
@@ -492,7 +697,7 @@
                 document.getElementById("statusTitle").innerText = "Network Sync Notice";
                 document.getElementById("statusMessage").innerHTML = `Your response was stored locally, but failed to upload. <br><strong>Do not close this page.</strong> Please report to the TPO room immediately.`;
                 document.getElementById("finalMessageState").classList.remove("hidden");
-                console.error("Critical submission failure: ", err);
+                console.error(err);
             });
         }
     </script>
