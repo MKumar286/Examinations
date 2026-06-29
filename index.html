@@ -619,15 +619,18 @@
         });
 
         window.addEventListener("blur", () => {
-            if (isExamActive && !examSubmitted) {
-                executeAutoSubmission("WINDOW_FOCUS_LOST");
-            }
-        });
+    // A tiny 100ms delay ensures native popups don't trigger a false positive
+    setTimeout(() => {
+        if (isExamActive && !examSubmitted) {
+            executeAutoSubmission("WINDOW_FOCUS_LOST");
+        }
+    }, 100);
+});
 
-      function handleFinalSubmissionIntent() {
+function handleFinalSubmissionIntent() {
     const answered = userProgressState.filter(s => s.selectedAnswer !== "").length;
     
-    // 1. Temporarily pause the anti-cheat flag before showing the popup
+    // 1. Pause active proctoring checks immediately
     isExamActive = false; 
     
     const userChoiceConfirm = confirm(`Summary: You have answered ${answered} out of ${globalQuestionsData.length} questions.\n\nAre you sure you want to finalize and submit your assessment paper?`);
@@ -635,8 +638,13 @@
     if (userChoiceConfirm === true) {
         executeAutoSubmission("NORMAL_SUBMIT");
     } else {
-        // 2. Reactivate the anti-cheat flag if the student decides to continue the exam
+        // 2. Student clicked cancel: Turn proctoring back on
         isExamActive = true; 
+        
+        // 3. Re-sync UI views to ensure the exam screen stays active and interactive
+        buildProgressPaletteMarkup();
+        loadActiveQuestionToWorkspace();
+        
         console.log("Submission canceled by student. Session context preserved.");
     }
 }
