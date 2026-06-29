@@ -64,7 +64,7 @@
             margin-bottom: 20px;
         }
 
-        /* 2-Column Split View for Active Exam */       
+        /* 2-Column Split View for Active Exam */
         .exam-workspace {
             display: grid;
             grid-template-columns: 1fr 320px;
@@ -91,7 +91,7 @@
         }
 
         .question-text {
-            font-weight: 600;      
+            font-weight: 600;
             font-size: 1.2rem;
             margin-bottom: 20px;
             color: var(--dark-color);
@@ -110,7 +110,7 @@
         }
 
         .option-label:hover {
-            background: #e2e6ea;  
+            background: #e2e6ea;
         }
 
         .option-label.selected-option {
@@ -119,7 +119,7 @@
         }
 
         .option-label input {
-            margin-right: 12px;     
+            margin-right: 12px;
         }
 
         /* Action Buttons Block */
@@ -241,11 +241,72 @@
         .instruction-list li { margin-bottom: 12px; color: #495057; }
         .warning-box { background-color: #fff3cd; border-left: 4px solid var(--warning-color); padding: 15px; margin: 20px 0; border-radius: 4px; color: #664d03; }
         .hidden { display: none !important; }
+
+        /* BULLETPROOF CUSTOM MODAL OVERLAY STYLE */
+        .custom-modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(3px);
+            z-index: 5000;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .custom-modal-card {
+            background-color: #ffffff;
+            width: 90%;
+            max-width: 500px;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            text-align: center;
+            animation: modalFadeIn 0.3s ease-out;
+        }
+
+        .modal-btn-row {
+            display: flex;
+            justify-content: space-around;
+            margin-top: 25px;
+            gap: 15px;
+        }
+
+        .btn-modal-confirm {
+            background-color: var(--success-color);
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            font-size: 1rem;
+            font-weight: bold;
+            border-radius: 5px;
+            cursor: pointer;
+            flex: 1;
+        }
+
+        .btn-modal-cancel {
+            background-color: #6c757d;
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            font-size: 1rem;
+            font-weight: bold;
+            border-radius: 5px;
+            cursor: pointer;
+            flex: 1;
+        }
+
+        @keyframes modalFadeIn {
+            from { transform: translateY(-20px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
     </style>
 </head>
 <body>
 
-    <!-- Fixed Header -->
     <div id="examHeader" class="exam-header hidden">
         <div>
             <h3 style="margin:0; color: var(--dark-color);">Campus Placement Assessment</h3>
@@ -256,7 +317,6 @@
 
     <div class="main-container">
         
-        <!-- STEP 1: Student Details Form -->
         <div id="registrationCard" class="card">
             <h2 style="margin-top:0; border-bottom: 2px solid var(--primary-color); padding-bottom: 10px;">Student Information</h2>
             <form id="studentForm" onsubmit="showInstructions(event)" class="student-details-form">
@@ -281,7 +341,6 @@
             </form>
         </div>
 
-        <!-- STEP 2: Instructions View -->
         <div id="instructionsCard" class="card hidden">
             <h2 style="margin-top:0; border-bottom: 2px solid var(--primary-color); padding-bottom: 10px;">Examination Instructions</h2>
             <p>Please review the following rules carefully before starting your assessment:</p>
@@ -297,16 +356,13 @@
             <button type="button" onclick="startExamination()" class="btn-submit-exam">I Am Ready - Begin Examination</button>
         </div>
 
-        <!-- STEP 3: Split Workspace Exam Screen Layout -->
         <div id="examWorkspace" class="exam-workspace hidden">
             
-            <!-- Left Panel: Main Question Window Container Card -->
             <div class="card question-display-panel">
                 <div id="activeQuestionArea">
                     <p>Loading active problem space content configuration safely...</p>
                 </div>
                 
-                <!-- Action Navigation Layout Structure -->
                 <div class="action-button-row">
                     <div>
                         <button type="button" onclick="handlePreviousQuestion()" id="btnPrev" class="btn-action btn-nav-prev">Previous</button>
@@ -319,14 +375,11 @@
                 </div>
             </div>
 
-            <!-- Right Panel: Fixed Progress Control Sidebar Card Container -->
             <div class="card sidebar-panel">
                 <h4 class="sidebar-title">Question Palette</h4>
                 
-                <!-- Numeric Nav Matrix Wrapper Grid -->
                 <div id="questionPaletteGrid" class="question-grid"></div>
                 
-                <!-- Color Mapping Informational Legend -->
                 <div class="legend-container">
                     <div class="legend-item"><span class="legend-dot" style="background: #e9ecef; border: 1px solid #ced4da;"></span> Not Visited</div>
                     <div class="legend-item"><span class="legend-dot" style="background: var(--danger-color);"></span> Not Answered</div>
@@ -338,7 +391,6 @@
             </div>
         </div>
 
-        <!-- STEP 4: Post Submissions Processing Module -->
         <div id="statusCard" class="card hidden">
             <div id="processingState" style="text-align: center;">
                 <h2>Processing Submission...</h2>
@@ -367,6 +419,17 @@
             </div>
         </div>
 
+    </div>
+
+    <div id="customConfirmModal" class="custom-modal-overlay hidden">
+        <div class="custom-modal-card">
+            <h2 style="margin-top:0; color: var(--dark-color);">Submit Assessment Paper?</h2>
+            <p id="modalSummaryText" style="font-size: 1.1rem; color: #495057; line-height: 1.5;"></p>
+            <div class="modal-btn-row">
+                <button type="button" class="btn-modal-cancel" onclick="closeSubmissionModal()">Cancel & Resume</button>
+                <button type="button" class="btn-modal-confirm" onclick="confirmFinalSubmission()">Yes, Submit</button>
+            </div>
+        </div>
     </div>
 
     <script>
@@ -589,11 +652,10 @@
         }
 
         function startTimer() {
-            if (timerInterval) clearInterval(timerInterval); // Avoid duplicate threads
+            if (timerInterval) clearInterval(timerInterval); 
             timerInterval = setInterval(() => {
                 totalTimeSeconds--;
                 
-                // Track time remaining to local storage every second
                 if (totalTimeSeconds % 5 === 0) {
                     saveSessionToLocalStorage();
                 }
@@ -611,7 +673,7 @@
             }, 1000);
         }
 
-        // ANTI-CHEATING HOOKS
+        // ANTI-CHEATING HOOKS (Now fully bulletproof with the local internal HTML modal)
         document.addEventListener("visibilitychange", () => {
             if (document.hidden && isExamActive && !examSubmitted) {
                 executeAutoSubmission("TAB_SWITCH_DETECTED");
@@ -619,35 +681,32 @@
         });
 
         window.addEventListener("blur", () => {
-    // A tiny 100ms delay ensures native popups don't trigger a false positive
-    setTimeout(() => {
-        if (isExamActive && !examSubmitted) {
-            executeAutoSubmission("WINDOW_FOCUS_LOST");
-        }
-    }, 100);
-});
+            if (isExamActive && !examSubmitted) {
+                executeAutoSubmission("WINDOW_FOCUS_LOST");
+            }
+        });
 
-function handleFinalSubmissionIntent() {
-    const answered = userProgressState.filter(s => s.selectedAnswer !== "").length;
-    
-    // 1. Pause active proctoring checks immediately
-    isExamActive = false; 
-    
-    const userChoiceConfirm = confirm(`Summary: You have answered ${answered} out of ${globalQuestionsData.length} questions.\n\nAre you sure you want to finalize and submit your assessment paper?`);
-    
-    if (userChoiceConfirm === true) {
-        executeAutoSubmission("NORMAL_SUBMIT");
-    } else {
-        // 2. Student clicked cancel: Turn proctoring back on
-        isExamActive = true; 
-        
-        // 3. Re-sync UI views to ensure the exam screen stays active and interactive
-        buildProgressPaletteMarkup();
-        loadActiveQuestionToWorkspace();
-        
-        console.log("Submission canceled by student. Session context preserved.");
-    }
-}
+        // REPLACED OLD POPUP WITH A ROCK-SOLID CUSTOM MODAL OVERLAY ROUTINE
+        function handleFinalSubmissionIntent() {
+            const answered = userProgressState.filter(s => s.selectedAnswer !== "").length;
+            
+            // Set text inside our custom container
+            document.getElementById("modalSummaryText").innerHTML = `You have answered <strong>${answered}</strong> out of <strong>${globalQuestionsData.length}</strong> questions.<br><br>Are you sure you want to finalize and submit your assessment paper?`;
+            
+            // Unhide the interior webpage layout modal overlay safely
+            document.getElementById("customConfirmModal").classList.remove("hidden");
+        }
+
+        function closeSubmissionModal() {
+            // Hide modal and resume live workspace directly without triggering focal shifts
+            document.getElementById("customConfirmModal").classList.add("hidden");
+            console.log("Submission canceled by student. Session context preserved.");
+        }
+
+        function confirmFinalSubmission() {
+            document.getElementById("customConfirmModal").classList.add("hidden");
+            executeAutoSubmission("NORMAL_SUBMIT");
+        }
 
         function executeAutoSubmission(reason) {
             if (examSubmitted) return; 
@@ -657,6 +716,9 @@ function handleFinalSubmissionIntent() {
             
             // Remove local storage safety backups on absolute final submission pipeline execution
             clearSessionFromLocalStorage();
+
+            // Ensure confirm modal is hidden if open
+            document.getElementById("customConfirmModal").classList.add("hidden");
 
             document.getElementById("examHeader").classList.add("hidden");
             document.getElementById("examWorkspace").classList.add("hidden");
