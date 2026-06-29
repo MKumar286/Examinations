@@ -624,19 +624,22 @@
             }
         });
 
-        function handleFinalSubmissionIntent() {
-            const answered = userProgressState.filter(s => s.selectedAnswer !== "").length;
-            
-            // FIX: Safely parse confirmation window response structure
-            const userChoiceConfirm = confirm(`Summary: You have answered ${answered} out of ${globalQuestionsData.length} questions.\n\nAre you sure you want to finalize and submit your assessment paper?`);
-            
-            if (userChoiceConfirm === true) {
-                executeAutoSubmission("NORMAL_SUBMIT");
-            } else {
-                // Clicking Cancel now exits the routine safely without affecting the live examination workspace
-                console.log("Submission canceled by student. Session context preserved.");
-            }
-        }
+      function handleFinalSubmissionIntent() {
+    const answered = userProgressState.filter(s => s.selectedAnswer !== "").length;
+    
+    // 1. Temporarily pause the anti-cheat flag before showing the popup
+    isExamActive = false; 
+    
+    const userChoiceConfirm = confirm(`Summary: You have answered ${answered} out of ${globalQuestionsData.length} questions.\n\nAre you sure you want to finalize and submit your assessment paper?`);
+    
+    if (userChoiceConfirm === true) {
+        executeAutoSubmission("NORMAL_SUBMIT");
+    } else {
+        // 2. Reactivate the anti-cheat flag if the student decides to continue the exam
+        isExamActive = true; 
+        console.log("Submission canceled by student. Session context preserved.");
+    }
+}
 
         function executeAutoSubmission(reason) {
             if (examSubmitted) return; 
