@@ -242,7 +242,7 @@
         .warning-box { background-color: #fff3cd; border-left: 4px solid var(--warning-color); padding: 15px; margin: 20px 0; border-radius: 4px; color: #664d03; }
         .hidden { display: none !important; }
 
-        /* BULLETPROOF CUSTOM MODAL OVERLAY STYLE */
+        /* Custom Modal Overlay Style */
         .custom-modal-overlay {
             position: fixed;
             top: 0;
@@ -394,7 +394,7 @@
         <div id="statusCard" class="card hidden">
             <div id="processingState" style="text-align: center;">
                 <h2>Processing Submission...</h2>
-                <p>Please wait while your answers are being synchronized with the master database.</p>
+                <p id="submissionStatusText">Please wait while your answers are being synchronized with the master database.</p>
             </div>
 
             <div id="resultsDashboard" class="hidden">
@@ -618,6 +618,7 @@
             buildProgressPaletteMarkup();
         }
 
+        // Marks current card layout for review tracking matrices
         function handleMarkForReview() {
             userProgressState[currentQuestionIndex].isMarkedReview = true;
             buildProgressPaletteMarkup();
@@ -673,7 +674,7 @@
             }, 1000);
         }
 
-        // ANTI-CHEATING HOOKS (Now fully bulletproof with the local internal HTML modal)
+        // Anti-Cheating Hooks
         document.addEventListener("visibilitychange", () => {
             if (document.hidden && isExamActive && !examSubmitted) {
                 executeAutoSubmission("TAB_SWITCH_DETECTED");
@@ -686,19 +687,13 @@
             }
         });
 
-        // REPLACED OLD POPUP WITH A ROCK-SOLID CUSTOM MODAL OVERLAY ROUTINE
         function handleFinalSubmissionIntent() {
             const answered = userProgressState.filter(s => s.selectedAnswer !== "").length;
-            
-            // Set text inside our custom container
             document.getElementById("modalSummaryText").innerHTML = `You have answered <strong>${answered}</strong> out of <strong>${globalQuestionsData.length}</strong> questions.<br><br>Are you sure you want to finalize and submit your assessment paper?`;
-            
-            // Unhide the interior webpage layout modal overlay safely
             document.getElementById("customConfirmModal").classList.remove("hidden");
         }
 
         function closeSubmissionModal() {
-            // Hide modal and resume live workspace directly without triggering focal shifts
             document.getElementById("customConfirmModal").classList.add("hidden");
             console.log("Submission canceled by student. Session context preserved.");
         }
@@ -708,16 +703,15 @@
             executeAutoSubmission("NORMAL_SUBMIT");
         }
 
+        // HIGH CONCURRENCY OPTIMIZED EXECUTION BLOCK FOR 300 USERS
         function executeAutoSubmission(reason) {
             if (examSubmitted) return; 
             examSubmitted = true;
             isExamActive = false;
             clearInterval(timerInterval);
             
-            // Remove local storage safety backups on absolute final submission pipeline execution
+            // Wipe local persistence keys directly on final submission pipelines
             clearSessionFromLocalStorage();
-
-            // Ensure confirm modal is hidden if open
             document.getElementById("customConfirmModal").classList.add("hidden");
 
             document.getElementById("examHeader").classList.add("hidden");
@@ -745,76 +739,89 @@
                 submissionReason: reason
             };
 
-            fetch(BACKEND_API_URL, {
-                method: "POST",
-                body: JSON.stringify(payload),
-                headers: { "Content-Type": "text/plain;charset=utf-8" }
-            })
-            .then(res => res.json())
-            .then(data => {
-                document.getElementById("processingState").classList.add("hidden");
+            // HIGH-CONCURRENCY TRAFFIC ENGINE:
+            // Cheating violations drop instant payloads. Regular submissions or time-outs 
+            // introduce a safe jitter offset (0-12 seconds) to spread the server workload.
+            let networksJitterDelay = 0;
+            if (reason === "NORMAL_SUBMIT" || reason === "TIMEOUT") {
+                networksJitterDelay = Math.floor(Math.random() * 12000); 
+                document.getElementById("submissionStatusText").innerText = "Establishing secure connection to database queue. Please wait...";
+            }
 
-                document.getElementById("dashTotal").innerText = globalQuestionsData.length;
-                document.getElementById("dashAnswered").innerText = answeredCount;
-                document.getElementById("dashNotAnswered").innerText = unAnsweredCount;
+            setTimeout(() => {
+                document.getElementById("submissionStatusText").innerText = "Uploading responses and recording scores...";
                 
-                let correctCount = 0;
-                let incorrectCount = 0;
+                fetch(BACKEND_API_URL, {
+                    method: "POST",
+                    body: JSON.stringify(payload),
+                    headers: { "Content-Type": "text/plain;charset=utf-8" }
+                })
+                .then(res => res.json())
+                .then(data => {
+                    document.getElementById("processingState").classList.add("hidden");
 
-                if (data && data.correctCount !== undefined && data.incorrectCount !== undefined) {
-                    correctCount = data.correctCount;
-                    incorrectCount = data.incorrectCount;
-                } else {
-                    let hasKeys = false;
-                    globalQuestionsData.forEach((q, idx) => {
-                        let keyField = q.answer || q.correctOpt; 
-                        if (keyField) {
-                            hasKeys = true;
-                            if (flatAnswersList[idx] !== "") {
-                                if (flatAnswersList[idx] === keyField) correctCount++;
-                                else incorrectCount++;
+                    document.getElementById("dashTotal").innerText = globalQuestionsData.length;
+                    document.getElementById("dashAnswered").innerText = answeredCount;
+                    document.getElementById("dashNotAnswered").innerText = unAnsweredCount;
+                    
+                    let correctCount = 0;
+                    let incorrectCount = 0;
+
+                    if (data && data.correctCount !== undefined && data.incorrectCount !== undefined) {
+                        correctCount = data.correctCount;
+                        incorrectCount = data.incorrectCount;
+                    } else {
+                        let hasKeys = false;
+                        globalQuestionsData.forEach((q, idx) => {
+                            let keyField = q.answer || q.correctOpt; 
+                            if (keyField) {
+                                hasKeys = true;
+                                if (flatAnswersList[idx] !== "") {
+                                    if (flatAnswersList[idx] === keyField) correctCount++;
+                                    else incorrectCount++;
+                                }
                             }
+                        });
+                        if (!hasKeys) {
+                            correctCount = "Recorded";
+                            incorrectCount = "Recorded";
                         }
-                    });
-                    if (!hasKeys) {
-                        correctCount = "Recorded";
-                        incorrectCount = "Recorded";
                     }
-                }
 
-                document.getElementById("dashCorrect").innerText = correctCount;
-                document.getElementById("dashIncorrect").innerText = incorrectCount;
-                document.getElementById("resultsDashboard").classList.remove("hidden");
+                    document.getElementById("dashCorrect").innerText = correctCount;
+                    document.getElementById("dashIncorrect").innerText = incorrectCount;
+                    document.getElementById("resultsDashboard").classList.remove("hidden");
 
-                let countdownTime = 10;
-                const dashboardCountdown = setInterval(() => {
-                    countdownTime--;
-                    document.getElementById("redirectTimer").innerText = countdownTime;
+                    let countdownTime = 10;
+                    const dashboardCountdown = setInterval(() => {
+                        countdownTime--;
+                        document.getElementById("redirectTimer").innerText = countdownTime;
 
-                    if (countdownTime <= 0) {
-                        clearInterval(dashboardCountdown);
-                        document.getElementById("resultsDashboard").classList.add("hidden");
-                        
-                        if (reason === "TAB_SWITCH_DETECTED" || reason === "WINDOW_FOCUS_LOST") {
-                            document.getElementById("statusTitle").innerText = "Exam Terminated";
-                            document.getElementById("statusTitle").style.color = "var(--danger-color)";
-                            document.getElementById("statusMessage").innerText = "Your paper was automatically submitted because you left or deselected the examination screen window.";
-                        } else {
-                            document.getElementById("statusTitle").innerText = "Thank You!";
-                            document.getElementById("statusTitle").style.color = "var(--dark-color)";
-                            document.getElementById("statusMessage").innerText = "Your examination paper has been successfully submitted and saved.";
+                        if (countdownTime <= 0) {
+                            clearInterval(dashboardCountdown);
+                            document.getElementById("resultsDashboard").classList.add("hidden");
+                            
+                            if (reason === "TAB_SWITCH_DETECTED" || reason === "WINDOW_FOCUS_LOST") {
+                                document.getElementById("statusTitle").innerText = "Exam Terminated";
+                                document.getElementById("statusTitle").style.color = "var(--danger-color)";
+                                document.getElementById("statusMessage").innerText = "Your paper was automatically submitted because you left or deselected the examination screen window.";
+                            } else {
+                                document.getElementById("statusTitle").innerText = "Thank You!";
+                                document.getElementById("statusTitle").style.color = "var(--dark-color)";
+                                document.getElementById("statusMessage").innerText = "Your examination paper has been successfully submitted and saved.";
+                            }
+                            document.getElementById("finalMessageState").classList.remove("hidden");
                         }
-                        document.getElementById("finalMessageState").classList.remove("hidden");
-                    }
-                }, 1000);
-            })
-            .catch(err => {
-                document.getElementById("processingState").classList.add("hidden");
-                document.getElementById("statusTitle").innerText = "Network Sync Notice";
-                document.getElementById("statusMessage").innerHTML = `Your response was stored locally, but failed to upload. <br><strong>Do not close this page.</strong> Please report to the TPO room immediately.`;
-                document.getElementById("finalMessageState").classList.remove("hidden");
-                console.error(err);
-            });
+                    }, 1000);
+                })
+                .catch(err => {
+                    document.getElementById("processingState").classList.add("hidden");
+                    document.getElementById("statusTitle").innerText = "Network Sync Notice";
+                    document.getElementById("statusMessage").innerHTML = `Your response was stored locally, but failed to upload. <br><strong>Do not close this page.</strong> Please report to the TPO room immediately.`;
+                    document.getElementById("finalMessageState").classList.remove("hidden");
+                    console.error(err);
+                });
+            }, networksJitterDelay);
         }
     </script>
 </body>
